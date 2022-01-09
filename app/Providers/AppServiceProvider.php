@@ -7,6 +7,8 @@ use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Schema;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,7 +30,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         $year = Carbon::today('Africa/Nairobi')->format('Y');
-       /// $settings = Settings::first();
-        View::share(['appName' => 'Train', 'year' => $year]);
+
+        View::share(['appName' => 'EazyCredo', 'year' => $year]);
+        Schema::defaultStringLength(191);
     }
 }
