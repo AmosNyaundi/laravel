@@ -24,8 +24,8 @@
 
             </div>
             {{-- @foreach($bal as $key => $data) --}}
-            <button type="button" class="btn mb-1 btn-danger">
-                Balance: {{ number_format(3700) }}
+            <button type="button" class="btn mb-1 btn-danger">Balance:
+                {{-- Balance: {{ number_format($bal->Balance) }} {{ Balance::latest()->first() }} --}}
             </button>
             {{-- @endforeach --}}
 
@@ -38,11 +38,13 @@
                             <h6 class="mb-0 line-height">
                                 {{ auth()->user()->username }}
 
+
                                 {{-- @if(count(auth()->user()->unreadNotifications)>0)
                                     <span class="badge badge-danger badge-pill rounded">
                                     {{ count(auth()->user()->unreadNotifications) }}
                                     </span>
                                 @endif --}}
+
                             </h6>
                             <p class="mb-0 text-primary"> {{ auth()->user()->email }}</p>
                         </div>
