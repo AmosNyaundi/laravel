@@ -30,6 +30,12 @@
                         <i class="ri-arrow-right-s-line iq-arrow-right"></i>
                     </a>
                     <ul id="transactions" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+                        <li class="@yield('all')">
+                            <a href="{{ route('txn')}}">
+                                <i class="las la-exchange-alt"></i>
+                                Purchase
+                            </a>
+                        </li>
                         <li class="@yield('airtime')">
                             <a href="{{ route('airtime_txn')}}">
                                 <i class="las la-paper-plane"></i>

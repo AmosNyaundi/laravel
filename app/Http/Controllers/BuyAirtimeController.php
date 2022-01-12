@@ -331,8 +331,8 @@ class BuyAirtimeController extends Controller
                 'PartyA' => $msisdn,
                 'PartyB' => $shortcode,
                 'PhoneNumber' => '254'.$msisdn,
-                'CallBackURL' => 'https://157.230.92.224:1010/airtime/resp.php',
-                'AccountReference' => 'Easy Way',
+                'CallBackURL' => 'https://157.230.92.224:4835/airtime/resp.php',
+                'AccountReference' => 'EasyCredo',
                 'TransactionDesc' => $service
             );
 
@@ -353,7 +353,26 @@ class BuyAirtimeController extends Controller
             }
             else
             {
+                $requestVals = json_decode($response, TRUE);
+
+                $MerchantRequestID = isset($requestVals['MerchantRequestID']) ? $requestVals['MerchantRequestID'] : '';
+                $CheckoutRequestID = isset($requestVals['CheckoutRequestID']) ? $requestVals['CheckoutRequestID'] : '';
+                $ResponseCode = isset($requestVals['ResponseCode']) ? $requestVals['ResponseCode'] : '';
+                $ResponseDescription = isset($requestVals['ResponseDescription']) ? $requestVals['ResponseDescription'] : 'No Response';
+                $CustomerMessage = isset($requestVals['CustomerMessage']) ? $requestVals['CustomerMessage'] : '';
+                $ResultCode = isset($requestVals['ResultCode']) ? $requestVals['ResultCode'] : '';
+                $ResultDesc = isset($requestVals['ResultDesc']) ? $requestVals['ResultDesc'] : '';
+                $MpesaReceiptNumber = isset($requestVals['MpesaReceiptNumber']) ? $requestVals['MpesaReceiptNumber'] : '';
+
+                if ($ResponseCode == '0')//success
+                {
+                    $status = 1;
+                }
+            }
+
+
                 $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
                 switch($http_code)
                 {
                     case "200":  # OK
@@ -405,11 +424,8 @@ class BuyAirtimeController extends Controller
 
                     break;
 
-
-
-
                 }
-            }
+
 
             curl_close($ch);
     }
@@ -493,14 +509,8 @@ class BuyAirtimeController extends Controller
         return json_encode($array);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function callback(Request $request)
     {
-        //
+
     }
 }

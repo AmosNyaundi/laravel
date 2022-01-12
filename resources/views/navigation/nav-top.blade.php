@@ -15,7 +15,7 @@
                 </div>
             </div>
             <div class="iq-search-bar">
-               <a class="btn btn-info" href="{{ route('mpesa')}}" role="button"><i class="ri-message-2-line"></i>Transactions </a>
+               <a class="btn btn-info" href="{{ route('txn')}}" role="button"><i class="ri-message-2-line"></i>Transactions </a>
                <a class="btn btn-primary" href="{{ route('buy_airtime')}}" role="button"><i class="ri-arrow-go-forward-line"></i> Buy Airtime</a>
              </div>
 

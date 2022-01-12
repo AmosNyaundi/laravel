@@ -7,7 +7,7 @@ use App\Http\Controllers\Dashboard;
 use App\Http\Controllers\AirTxnController;
 use App\Http\Controllers\MpesaTxnController;
 use App\Http\Controllers\BuyAirtimeController;
-use App\Http\Controllers\StkpushController;
+use App\Http\Controllers\TxnController;
 
 
 /*
@@ -39,6 +39,7 @@ Route::post('reset-password', [ForgotPasswordController::class, 'submitResetPass
 //M-PESA  TRANSACTIONS
 Route::get('mpesa', [MpesaTxnController::class, 'index'])->name('mpesa');
 Route::get('balance', [MpesaTxnController::class, 'bal'])->name('balance');
+Route::get('transactions', [TxnController::class, 'show'])->name('txn');
 
 //AIRTIME TRANSACTIONS
 Route::get('airtime', [AirTxnController::class, 'index'])->name('airtime_txn');
