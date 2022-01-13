@@ -602,8 +602,9 @@ class BuyAirtimeController extends Controller
         }
         else
         {
-            $data = json_decode($request);
-            $this->log_stk( json_decode($data->all()) );
+            $data = $request;
+            //Log::info(json_encode($request->all()));
+            $this->log_stk( $data->all() );
         }
 
     }
