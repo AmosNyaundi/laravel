@@ -1,7 +1,7 @@
 <div class="col-md-6 text-center sign-in-page-image">
     <div class="sign-in-detail text-white">
         <a class="sign-in-logo mb-5" href="#">
-            <img src="{{ asset('user/images/favicon.ico') }}" class="img-fluid" alt="logo"></a>
+            <img src="{{ asset('user/images/logo-full.png') }}" class="img-fluid" alt="logo"></a>
         <div class="owl-carousel" data-autoplay="true" data-loop="true" data-nav="false"
              data-dots="true" data-items="1" data-items-laptop="1" data-items-tab="1"
              data-items-mobile="1" data-items-mobile-sm="1" data-margin="0">

@@ -148,7 +148,11 @@ class BuyAirtimeController extends Controller
                         ->update([
                             'astatus' => $responseStatus,
                             'PhoneNumber' => $msisdn,
+<<<<<<< HEAD
+                            'transId' => $transId                        
+=======
                             'transId' => $transId
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
                         ],
                         [
                             'transId' => $transId,
@@ -372,7 +376,11 @@ class BuyAirtimeController extends Controller
             }
             else
             {
+<<<<<<< HEAD
+              
+=======
 
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
                 $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
                 switch($http_code)
@@ -385,7 +393,11 @@ class BuyAirtimeController extends Controller
                     $ResponseCode = isset($requestVals['ResponseCode']) ? $requestVals['ResponseCode'] : '';
                     $ResponseDescription = isset($requestVals['ResponseDescription']) ? $requestVals['ResponseDescription'] : 'No Response';
                     $CustomerMessage = isset($requestVals['CustomerMessage']) ? $requestVals['CustomerMessage'] : '';
+<<<<<<< HEAD
+                   
+=======
 
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
                     if ($ResponseCode == '0')//success
                     {
                         $status = 1;
@@ -399,7 +411,11 @@ class BuyAirtimeController extends Controller
                             'CustomerMessage' => $CustomerMessage,
                             'PhoneNumber' => '254'.$msisdn,
                             'Amount' => $amount
+<<<<<<< HEAD
+                            
+=======
 
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
                         ]);
 
                     $message = $ResponseDescription;
@@ -520,14 +536,25 @@ class BuyAirtimeController extends Controller
     {
         //when success
         $data = json_encode($request->all());
+<<<<<<< HEAD
+        
+        $req = json_decode($data);
+=======
 
         $req = json_decode($data);
 
         $ResultCode=$req->Body->stkCallback->ResultCode;
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
 
+        $ResultCode=$req->Body->stkCallback->ResultCode;
+               
         if($ResultCode == '0')
         {
+<<<<<<< HEAD
+            
+=======
 
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
             $MerchantRequestID = $req->Body->stkCallback->MerchantRequestID;
             $CheckoutRequestID = $req->Body->stkCallback->CheckoutRequestID;
             $ResultDesc = $req->Body->stkCallback->ResultDesc;
@@ -536,7 +563,11 @@ class BuyAirtimeController extends Controller
             $TransactionDate = $req->Body->stkCallback->CallbackMetadata->Item[3]->Value;
             $PhoneNumber = $req->Body->stkCallback->CallbackMetadata->Item[4]->Value;
              //$Balance = $req->Body->stkCallback->CallbackMetadata->Item[2]->Value;
+<<<<<<< HEAD
+           
+=======
 
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
 
             $resp = "Merchant_req: ".$MerchantRequestID. " |Amount: ".$amount." MpesaReceiptNumber: ".$MpesaReceiptNumber." TransactionDate: ".$TransactionDate." PhoneNumber: ".$PhoneNumber;
             DB::table('mpesa_txn')
@@ -562,10 +593,17 @@ class BuyAirtimeController extends Controller
                 'mpesaReceipt' => $MpesaReceiptNumber,
                 'amount' => $amount,
                 'mstatus'=> $ResultCode,
+<<<<<<< HEAD
+                'msisdn' => $PhoneNumber                           
+            ]); 
+
+            
+=======
                 'msisdn' => $PhoneNumber
             ]);
 
 
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
 
              $phone = $PhoneNumber;
              $this->airtime($amount,$phone,$MpesaReceiptNumber);
@@ -586,7 +624,11 @@ class BuyAirtimeController extends Controller
                         'CheckoutRequestID' => $CheckoutRequestID,
                         'ResultCode' => $ResultCode,
                         'ResultDesc' => $ResultDesc
+<<<<<<< HEAD
+                        
+=======
 
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
                     ],
                     [
                         'MerchantRequestID' => $MerchantRequestID,
@@ -596,9 +638,135 @@ class BuyAirtimeController extends Controller
 
             $this->log_stk($data);
 
-        }
+<<<<<<< HEAD
+        } 
 
     }
+
+    public function airtime($amount,$phone,$MpesaReceiptNumber)
+    {
+        $msisdn = $this->phoneNumber($phone);
+        $now = Carbon::now();
+
+        $savedToken = DB::table('air_token')
+            ->orderByDesc('id')
+            ->first();
+
+        if (isset($savedToken)) {
+            $verification = $now->isAfter($savedToken->expires_in);
+
+            if ($verification) {
+                $token = $this->getFreshOne();
+            } else {
+                $token = $savedToken->access_token;
+            }
+        } else {
+            $token = $this->getFreshOne();
+=======
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
+        }
+
+        $test = 'https://sandbox.safaricom.co.ke/v1/pretups/api/recharge';
+        $prod = 'https://prod.safaricom.co.ke/v1/pretups/api/recharge';
+
+        //$auth = Token();
+        if (isset($token)) {
+
+            $accessToken = "Bearer ".$token;
+            $pin = base64_encode('9090');
+            $amt = (int)$amount*100;
+
+            $ch = curl_init($test);
+            curl_setopt($ch,  CURLOPT_HTTPHEADER,
+                ['Authorization: '.$accessToken,
+                'Content-Type: application/json'
+                ]);
+
+            $request = '{
+                "senderMsisdn":"254748248717",
+                "amount":"'.$amt.'",
+                "servicePin":"'.$pin.'",
+                "receiverMsisdn":"'.$msisdn.'"
+                }';
+
+            curl_setopt($ch, CURLOPT_POST,1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
+            //curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+            $response = curl_exec($ch);
+
+
+            if(curl_errno($ch))
+            {
+                $resp ='Request Error:' . curl_error($ch);
+
+                $this->log_this($resp);
+
+            }
+            else
+            {
+                $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                switch($http_code)
+                {
+                    case "200":  # OK
+                    $data = json_decode($response);
+                    $responseId=$data->responseId;
+                    $responseDesc=$data->responseDesc;
+                    $responseStatus =$data->responseStatus;
+                    $transId=$data->transId;
+                    $resp="HTTP_CODE: ".$http_code."|ResponseID: ".$responseId."|Status: ".$responseStatus."|TransactionID: ".$transId."|Message: ".$responseDesc;
+                    $this->log_this($resp);
+
+                    DB::table('air_txn')->insert([
+                        'responseId' => $responseId,
+                        'responseStatus' => $http_code,
+                        'responseDesc' => $responseDesc,
+                        'receiverMsisdn' => $msisdn,
+                        'amount' => $amount,
+                        'transId' => $transId
+                    ]);
+
+                    DB::table('purchase')
+                        ->where('mpesaReceipt', $MpesaReceiptNumber)
+                        ->limit(1)
+                        ->update([
+                            'astatus' => $responseStatus,
+                            'PhoneNumber' => $msisdn,
+                            'transId' => $responseId                        
+                        ],
+                        [
+                            'transId' => $responseId,
+                            'mpesaReceipt' => $MpesaReceiptNumber
+                        ]);
+
+                    break;
+
+                    default:
+                    $data = json_decode($response);
+                    $errorCode=$data->errorCode;
+                    $resId=$data->responseId;
+                    $errorMessage=$data->errorMessage;
+                    $resp="|HTTP_CODE: ".$http_code."|errorCode: ".$errorCode."|message: ".$errorMessage;
+                    $this->log_this($resp);
+
+                    DB::table('air_txn')->insert([
+                        'responseId' => $resId,
+                        'responseStatus' => $http_code,
+                        'responseDesc' => $errorMessage,
+                        'receiverMsisdn' => $msisdn,
+                        'amount' => $amount,
+                        'transId' => 'NA'
+                    ]);
+                
+                    break;
+                }
+            }
+
+            curl_close($ch);
+    }
+<<<<<<< HEAD
+=======
 
     public function airtime($amount,$phone,$MpesaReceiptNumber)
     {
@@ -720,6 +888,7 @@ class BuyAirtimeController extends Controller
 
             curl_close($ch);
     }
+>>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
     }
 
 }

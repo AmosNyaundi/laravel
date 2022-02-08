@@ -2,7 +2,7 @@
 <div class="iq-sidebar">
     <div class="iq-navbar-logo d-flex justify-content-between">
         <a href="{{ url('/') }}" class="header-logo">
-            <img src="{{ asset('user/images/favicon.ico') }}" class="img-fluid rounded" alt="">
+            <img src="{{ asset('user/images/logo.png') }}" class="img-fluid rounded" alt="">
             <span style="font-size: 15px">{{ config('app.name') }}</span>
         </a>
         <div class="iq-menu-bt align-self-center">
