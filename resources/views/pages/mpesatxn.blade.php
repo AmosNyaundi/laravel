@@ -38,7 +38,6 @@
                                         <th scope="col">MerchantID</th>
                                         <th scope="col">CheckoutID</th>
                                         <th scope="col">Status</th>
-                                        {{-- <th scope="col">Response</th> --}}
                                         <th scope="col">Result</th>
                                         <th scope="col">Amount</th>
                                         <th scope="col">MpesaReceipt</th>
@@ -53,9 +52,9 @@
                                             <td>{{$data->MerchantRequestID}}</td>
                                             <td>{{$data->CheckoutRequestID}}</td>
                                             <td>
-                                                @if($data->ResultCode == 0)
+                                                @if($data->ResultCode == '0')
                                                 <div class="badge badge-pill badge-success">Success</div>
-                                                @elseif ($data->ResultCode !==0)
+                                                @elseif($data->ResultCode != '0')
                                                 <div class="badge badge-pill badge-danger">Failed</div>
                                                 @endif
 
@@ -64,8 +63,8 @@
                                             <td>{{$data->ResultDesc}}</td>
                                             <td>{{ number_format($data->Amount)}}</td>
                                             <td>{{$data->MpesaReceiptNumber}}</td>
-                                            <td>0{{$data->PhoneNumber}}</td>
-                                            <td>{{$data->TransactionDate}}</td>
+                                            <td>{{$data->PhoneNumber}}</td>
+                                            <td>{{$data->created_at}}</td>
 
 
                                         </tr>

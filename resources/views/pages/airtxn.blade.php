@@ -54,9 +54,9 @@
                                             <td>{{ $data->responseId }}</td>
                                             <td>{{$data->responseDesc}}</td>
                                             <td>
-                                                @if($data->responseStatus == 200)
+                                                @if($data->responseStatus == '200')
                                                 <div class="badge badge-pill badge-success">Success</div>
-                                                @elseif ($data->responseStatus !==200)
+                                                @elseif ($data->responseStatus !='200')
                                                 <div class="badge badge-pill badge-danger">Failed</div>
                                                 @endif
                                             </td>

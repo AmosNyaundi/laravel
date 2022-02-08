@@ -22,7 +22,7 @@ class MpesaTxnController extends Controller
 
             $table = DB::table('mpesa_txn')
                     //->orderBy('TransactionDate','DESC')
-                    ->latest('TransactionDate')
+                    ->latest()
                     ->get();
 
             return view('pages.mpesatxn',['table' => $table]);
