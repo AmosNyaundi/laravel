@@ -33,7 +33,7 @@
                           <form class="form-horizontal" method="POST" action="{{ route('buy')}}">
                             @csrf
                            <div class="form-group">
-                             <label for="furl"><b>Phone Number:</b></label>
+                             <label for="furl"><b>MPESA Code:</b></label>
                              <input type="text" class="form-control" name="phone" id="furl" placeholder="MSISDN">
 
                              <div class="text-danger">
@@ -44,7 +44,7 @@
                           </div>
 
                           <div class="form-group">
-                             <label for="furl"><b>Amount:</b></label>
+                             <label for="furl"><b>Phone Number:</b></label>
                              <input type="number" class="form-control" name="amount"  placeholder="Amount">
 
                              <div class="text-danger">
