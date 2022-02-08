@@ -277,7 +277,7 @@ class BuyAirtimeController extends Controller
         return json_encode($array);
     }
 
-    // STK PUSH
+    // STK PUSH TO CUSTOMER
 
     public function log_stk($lmsg)
     {
