@@ -305,7 +305,8 @@ class BuyAirtimeController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        if (isset($savedToken)) {
+        if (isset($savedToken))
+        {
             $verification = $now->isAfter($savedToken->expires_in);
 
             if ($verification) {
@@ -313,7 +314,9 @@ class BuyAirtimeController extends Controller
             } else {
                 $token = $savedToken->access_token;
             }
-        } else {
+        }
+        else
+        {
             $token = $this->FreshOne();
         }
 
