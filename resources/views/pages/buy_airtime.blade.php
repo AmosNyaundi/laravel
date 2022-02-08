@@ -34,7 +34,7 @@
                             @csrf
                            <div class="form-group">
                              <label for="furl"><b>MPESA Code:</b></label>
-                             <input type="text" class="form-control" name="Transaction Code" id="furl" placeholder="MSISDN">
+                             <input type="text" class="form-control" name="code" id="furl" placeholder="Transaction Code">
 
                              <div class="text-danger">
                                  @error('phone')
@@ -45,7 +45,7 @@
 
                           <div class="form-group">
                              <label for="furl"><b>Phone Number:</b></label>
-                             <input type="number" class="form-control" name="Phone Number"  placeholder="Amount">
+                             <input type="number" class="form-control" name="phone"  placeholder="Phone Number">
 
                              <div class="text-danger">
                                  @error('amount')

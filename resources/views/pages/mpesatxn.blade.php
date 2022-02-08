@@ -54,11 +54,7 @@
                                             <td>
                                                 @if($data->ResultCode == '0')
                                                 <div class="badge badge-pill badge-success">Success</div>
-<<<<<<< HEAD
-                                                @elseif($data->ResultCode != '0')
-=======
                                                 @elseif ($data->ResultCode !='0')
->>>>>>> 98562813e27fc9ce56d873d4e4c764263408165d
                                                 <div class="badge badge-pill badge-danger">Failed</div>
                                                 @endif
 

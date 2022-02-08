@@ -566,9 +566,11 @@ class BuyAirtimeController extends Controller
             ]);
 
 
+            $user = DB::table('trans_txn')->where('number', $PhoneNumber)->latest()->first();
 
-             $phone = $PhoneNumber;
-             $this->airtime($amount,$phone,$MpesaReceiptNumber);
+            $phone = $user->msisdn;
+            
+            $this->airtime($amount,$phone,$MpesaReceiptNumber);
 
             $this->log_stk("RESP: ".$resp);
         }
@@ -609,7 +611,8 @@ class BuyAirtimeController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        if (isset($savedToken)) {
+        if (isset($savedToken))
+        {
             $verification = $now->isAfter($savedToken->expires_in);
 
             if ($verification) {
@@ -617,7 +620,8 @@ class BuyAirtimeController extends Controller
             } else {
                 $token = $savedToken->access_token;
             }
-        } else {
+        } else
+        {
             $token = $this->getFreshOne();
         }
 
@@ -625,7 +629,8 @@ class BuyAirtimeController extends Controller
         $prod = 'https://prod.safaricom.co.ke/v1/pretups/api/recharge';
 
         //$auth = Token();
-        if (isset($token)) {
+        if (isset($token))
+        {
 
             $accessToken = "Bearer ".$token;
             $pin = base64_encode('9090');
@@ -719,7 +724,58 @@ class BuyAirtimeController extends Controller
             }
 
             curl_close($ch);
+        }
+
+
     }
+
+    public function self(Request $request)
+    {
+        //when success
+        $data = json_encode($request->all());
+
+        $req = json_decode($data);
+
+        $number=$req->number;
+        $pesa=$req->pesa;
+
+        $mq = DB::table('trans_txn')->insertOrIgnore([
+                'amount' => $pesa,
+                'number' => $number,
+                'msisdn'=> $number
+
+            ]);
+
+        if($mq)
+        {
+            $this->stkpush($request);
+        }
+
+    }
+
+    public function other(Request $request)
+    {
+        $data = json_encode($request->all());
+
+        $req = json_decode($data);
+
+        $number=$req->number;
+        $pesa=$req->pesa;
+        $msisdn=$req->msisdn;
+
+        $mq = DB::table('trans_txn')->insertOrIgnore([
+                'amount' => $pesa,
+                'number' => $number,
+                'msisdn'=> $msisdn
+
+            ]);
+
+        if($mq)
+        {
+            $this->stkpush($request);
+        }
+
+
     }
 
 }
