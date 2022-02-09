@@ -26,3 +26,4 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::post('resp/stk', [BuyAirtimeController::class, 'callback']);
 Route::post('resp/self', [BuyAirtimeController::class, 'self']);
 Route::post('resp/other', [BuyAirtimeController::class, 'other']);
+Route::post('feedback', [BuyAirtimeController::class, 'index']);

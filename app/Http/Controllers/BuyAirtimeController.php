@@ -569,7 +569,7 @@ class BuyAirtimeController extends Controller
             $user = DB::table('trans_txn')->where('number', $PhoneNumber)->latest()->first();
 
             $phone = $user->msisdn;
-            
+
             $this->airtime($amount,$phone,$MpesaReceiptNumber);
 
             $this->log_stk("RESP: ".$resp);
@@ -731,13 +731,9 @@ class BuyAirtimeController extends Controller
 
     public function self(Request $request)
     {
-        //when success
-        $data = json_encode($request->all());
 
-        $req = json_decode($data);
-
-        $number=$req->number;
-        $pesa=$req->pesa;
+        $number=$request->number;
+        $pesa=$request->pesa;
 
         $mq = DB::table('trans_txn')->insertOrIgnore([
                 'amount' => $pesa,
@@ -755,13 +751,10 @@ class BuyAirtimeController extends Controller
 
     public function other(Request $request)
     {
-        $data = json_encode($request->all());
 
-        $req = json_decode($data);
-
-        $number=$req->number;
-        $pesa=$req->pesa;
-        $msisdn=$req->msisdn;
+        $number=$request->number;
+        $pesa=$request->pesa;
+        $msisdn=$request->msisdn;
 
         $mq = DB::table('trans_txn')->insertOrIgnore([
                 'amount' => $pesa,
