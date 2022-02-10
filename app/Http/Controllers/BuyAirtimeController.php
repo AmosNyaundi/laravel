@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -769,6 +770,221 @@ class BuyAirtimeController extends Controller
         }
 
 
+    }
+
+    public function webSelf(Request $request)
+    {
+        $request = array(
+            'number' => $_POST['number'],
+            'pesa' => $_POST['pesa'],
+
+      );
+
+        $rt = json_encode($request);
+
+        $dat = json_decode($rt);
+        $number=$dat->number;
+        $pesa=$dat->pesa;
+
+        $mq = DB::table('trans_txn')->insertOrIgnore([
+                'amount' => $pesa,
+                'number' => $number,
+                'msisdn'=> $number
+
+            ]);
+
+        if($mq)
+        {
+            $this->webStkpush($number,$pesa);
+            //$this->stkpush($dat);
+        }
+
+        $this->log_web($rt);
+    }
+
+    public function webOther(Request $request)
+    {
+        $request = array(
+            'number' => $_POST['number'],
+            'pesa' => $_POST['pesa'],
+            'msisdn' => $_POST['msisdn'],
+
+      );
+
+        $rt = json_encode($request);
+
+        $dat = json_decode($rt);
+        $number=$dat->number;
+        $pesa=$dat->pesa;
+        $msisdn=$dat->msisdn;
+
+        $mq = DB::table('trans_txn')->insertOrIgnore([
+                'amount' => $pesa,
+                'number' => $number,
+                'msisdn'=> $msisdn
+
+            ]);
+
+        if($mq)
+        {
+            $this->webStkpush($number,$pesa);
+            //$this->stkpush($dat);
+        }
+
+        $this->log_web($rt);
+    }
+
+    public function webStkpush($number,$pesa)
+    {
+        $now = Carbon::now();
+
+        $msisdn = $this->Number($number);
+        $amount = $pesa;
+
+        $savedToken = DB::table('mpesa_token')
+            ->orderByDesc('id')
+            ->first();
+
+        if (isset($savedToken))
+        {
+            $verification = $now->isAfter($savedToken->expires_in);
+
+            if ($verification) {
+                $token = $this->FreshOne();
+            } else {
+                $token = $savedToken->access_token;
+            }
+        }
+        else
+        {
+            $token = $this->FreshOne();
+        }
+
+        $test = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
+        $prod ='https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
+
+        //$auth = Token();
+        if (isset($token))
+        {
+
+            $accessToken = "Bearer ".$token;
+            $service ="Airtime";
+            $shortcode ='174379';
+            $passkey ='bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+            $timestamp = date('YmdHis');
+            $password = base64_encode($shortcode.$passkey.$timestamp);
+
+            $ch = curl_init($test);
+            curl_setopt($ch,  CURLOPT_HTTPHEADER,
+                ['Authorization: '.$accessToken,
+                'Content-Type: application/json'
+                ]);
+            //$end = 'https://164.90.133.19:1010/stk/resp.php';
+            //$end2 = 'https://164.90.133.19:4040/api/resp/stk';
+            $request = array(
+                'BusinessShortCode'=>$shortcode,
+                'Password' =>$password,
+                'Timestamp' =>$timestamp,
+                'TransactionType' => 'CustomerPayBillOnline',
+                'Amount' => (int)$amount,
+                'PartyA' => $msisdn,
+                'PartyB' => $shortcode,
+                'PhoneNumber' => '254'.$msisdn,
+                'CallBackURL' => 'https://164.90.133.19:4040/api/resp/stk',
+                'AccountReference' => 'EasyTopup',
+                'TransactionDesc' => $service
+            );
+
+            $requestBody = json_encode($request);
+
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            $response = curl_exec($ch);
+
+
+            if($response === FALSE)
+            {
+                $resp ='Request Error:' . curl_error($ch);
+
+                $this->log_stk($resp);
+
+            }
+            else
+            {
+
+                $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+                switch($http_code)
+                {
+                    case "200":  # OK
+
+                    $requestVals = json_decode($response, TRUE);
+                    $MerchantRequestID = isset($requestVals['MerchantRequestID']) ? $requestVals['MerchantRequestID'] : '';
+                    $CheckoutRequestID = isset($requestVals['CheckoutRequestID']) ? $requestVals['CheckoutRequestID'] : '';
+                    $ResponseCode = isset($requestVals['ResponseCode']) ? $requestVals['ResponseCode'] : '';
+                    $ResponseDescription = isset($requestVals['ResponseDescription']) ? $requestVals['ResponseDescription'] : 'No Response';
+                    $CustomerMessage = isset($requestVals['CustomerMessage']) ? $requestVals['CustomerMessage'] : '';
+
+                    if ($ResponseCode == '0')//success
+                    {
+                        $status = 1;
+                    }
+
+                     $resp = DB::table('mpesa_txn')->insert([
+                            'MerchantRequestID' => $MerchantRequestID,
+                            'CheckoutRequestID' => $CheckoutRequestID,
+                            'ResponseCode'=> $ResponseCode,
+                            'ResponseDescription' => $ResponseDescription,
+                            'CustomerMessage' => $CustomerMessage,
+                            'PhoneNumber' => '254'.$msisdn,
+                            'Amount' => $amount
+
+                        ]);
+
+                    $message = $ResponseDescription;
+                    $status = "info";
+                    return redirect()->route('buy_airtime')->with(['msg' => $message,'state' =>$status]);
+
+                    break;
+
+                    default:
+                    $data = json_decode($response);
+                    $requestId=$data->requestId;
+                    $errorCode=$data->errorCode;
+                    $errorMessage=$data->errorMessage;
+                    $resp="|HTTP_CODE: ".$http_code."|errorCode: ".$errorCode."|message: ".$errorMessage;
+
+                    $res = DB::table('mpesa_txn')->insert([
+                        'requestId' => $requestId,
+                        'errorCode' => $errorCode,
+                        'errorMessage' => $errorMessage
+
+                    ]);
+
+                    $this->log_stk($res);
+
+                    $message = $errorMessage;
+                    $status = "danger";
+                    return redirect()->route('buy_airtime')->with(['msg' => $message,'state' =>$status]);
+
+                    break;
+
+                }
+            }
+
+
+            curl_close($ch);
+        }
+    }
+
+    public function log_web($lmsg)
+    {
+        $flog = sprintf("/var/log/popsms/web_airtime%s.log",date("Ymd-H"));
+        $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+        $f = fopen($flog, "a");
+        fwrite($f,$tlog);
+        fclose($f);
     }
 
 }

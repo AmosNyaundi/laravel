@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BuyAirtimeController;
+use App\Http\Controllers\FeedbackController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +25,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::post('resp/stk', [BuyAirtimeController::class, 'callback']);
-Route::post('resp/self', [BuyAirtimeController::class, 'self']);
-Route::post('resp/other', [BuyAirtimeController::class, 'other']);
-Route::post('feedback', [BuyAirtimeController::class, 'index']);
+Route::post('app/self', [BuyAirtimeController::class, 'self']);
+Route::post('app/other', [BuyAirtimeController::class, 'other']);
+Route::post('web/self', [BuyAirtimeController::class, 'webSelf']);
+Route::post('web/other', [BuyAirtimeController::class, 'webOther']);
+Route::post('feedback', [FeedbackController::class, 'index']);

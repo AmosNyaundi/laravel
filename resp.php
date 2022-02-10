@@ -1,19 +1,19 @@
 <?php
 
 
-$data=file_get_contents('php://input');
+//$data=file_get_contents('php://input');
 
-function log_flow($lmsg)
- {
-       $flog = sprintf("/var/log/popsms/stkpush_response_%s.log",date("Ymd-H"));
-       $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
-       $f = fopen($flog, "a");
-       fwrite($f,$tlog);
-       fclose($f);
- }
+// function log_flow($lmsg)
+//  {
+//        $flog = sprintf("/var/log/popsms/feedback%s.log",date("Ymd-H"));
+//        $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+//        $f = fopen($flog, "a");
+//        fwrite($f,$tlog);
+//        fclose($f);
+//  }
 
 
-
+/*
  function results($data)
  {
     $link = mysqli_connect("localhost", "root", "M1234!agre", "laravel");
@@ -23,7 +23,7 @@ function log_flow($lmsg)
     $MerchantRequestID = $request->input['Body']['stkCallback']['MerchantRequestID'];
 
     if($ResultCode === 0)
-    {   
+    {
         $amount = $request['Body']['stkCallback']['CallbackMetadata']['Item'][0]['Value'];
         $MpesaReceiptNumber = $request['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value'];
         $TransactionDate = $request['Body']['stkCallback']['CallbackMetadata']['Item'][3]['Value'];
@@ -32,10 +32,10 @@ function log_flow($lmsg)
         $ResultDesc = $request['Body']['stkCallback']['ResultDesc'];
 
         $resp = "Amount: ".$amount." MpesaReceiptNumber: ".$MpesaReceiptNumber." TransactionDate: ".$TransactionDate." PhoneNumber: ".$PhoneNumber;
-        
+
         $mql = "UPDATE mpesa_txn  SET ResultCode='$ResultCode',ResultDesc='$ResultDesc',Amount=''$amount,MpesaReceiptNumber='$MpesaReceiptNumber',
         TransactionDate='$TransactionDate',PhoneNumber='$PhoneNumber',Balance='$Balance' WHERE MerchantRequestID='$MerchantRequestID'";
-        
+
         mysqli_query($link, $mql);
 
         mysqli_close($link);
@@ -46,8 +46,16 @@ function log_flow($lmsg)
     {
         log_flow("RESP:".$data);
     }
-    
+
     return $resp;
     //log_flow("RESP:".$resp);
-}
- results($data);
+ } */
+ //log_flow($data);
+
+ $js = '{"Name":"amos","Email":"amosnyaundi4@gmail.com","Message":"dsdD"}';
+$dat = json_decode($js);
+
+$jina = $dat->Name;
+$email = $dat->Email;
+
+echo $jina;
