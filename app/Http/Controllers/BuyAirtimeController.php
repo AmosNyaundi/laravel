@@ -291,152 +291,164 @@ class BuyAirtimeController extends Controller
 
     public function stkpush(Request $request)
     {
-        $request->validate([
-            'number' => 'required |regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:10',
-            'pesa' => 'required'
-        ]);
-
-        $phone = $request['number'];
-        $amount = $request['pesa'];
-        $now = Carbon::now();
-
-        $msisdn = $this->Number($phone);
-
-        $savedToken = DB::table('mpesa_token')
-            ->orderByDesc('id')
-            ->first();
-
-        if (isset($savedToken))
-        {
-            $verification = $now->isAfter($savedToken->expires_in);
-
-            if ($verification) {
-                $token = $this->FreshOne();
-            } else {
-                $token = $savedToken->access_token;
-            }
-        }
-        else
-        {
-            $token = $this->FreshOne();
-        }
-
-        $test = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
-        $prod ='https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
-
-        //$auth = Token();
-        if (isset($token))
+        if(Auth::check())
         {
 
-            $accessToken = "Bearer ".$token;
-            $service ="Airtime";
-            $shortcode ='174379';
-            $passkey ='bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
-            $timestamp = date('YmdHis');
-            $password = base64_encode($shortcode.$passkey.$timestamp);
+            $request->validate([
+                'number' => 'required |regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:10',
+                'pesa' => 'required'
+            ]);
 
-            $ch = curl_init($test);
-            curl_setopt($ch,  CURLOPT_HTTPHEADER,
-                ['Authorization: '.$accessToken,
-                'Content-Type: application/json'
-                ]);
-            //$end = 'https://164.90.133.19:1010/stk/resp.php';
-            //$end2 = 'https://164.90.133.19:4040/api/resp/stk';
-            $request = array(
-                'BusinessShortCode'=>$shortcode,
-                'Password' =>$password,
-                'Timestamp' =>$timestamp,
-                'TransactionType' => 'CustomerPayBillOnline',
-                'Amount' => (int)$amount,
-                'PartyA' => $msisdn,
-                'PartyB' => $shortcode,
-                'PhoneNumber' => '254'.$msisdn,
-                'CallBackURL' => 'https://164.90.133.19:4040/api/resp/stk',
-                'AccountReference' => 'EasyTopup',
-                'TransactionDesc' => $service
-            );
+            $phone = $request['number'];
+            $amount = $request['pesa'];
+            $now = Carbon::now();
 
-            $requestBody = json_encode($request);
+            $msisdn = $this->Number($phone);
 
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            $response = curl_exec($ch);
+            $savedToken = DB::table('mpesa_token')
+                ->orderByDesc('id')
+                ->first();
 
-
-            if($response === FALSE)
+            if (isset($savedToken))
             {
-                $resp ='Request Error:' . curl_error($ch);
+                $verification = $now->isAfter($savedToken->expires_in);
 
-                $this->log_stk($resp);
-
+                if ($verification) {
+                    $token = $this->FreshOne();
+                } else {
+                    $token = $savedToken->access_token;
+                }
             }
             else
             {
+                $token = $this->FreshOne();
+            }
 
-                $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            //$test = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
+            $url ='https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
-                switch($http_code)
+            //$auth = Token();
+            if (isset($token))
+            {
+
+                $accessToken = "Bearer ".$token;
+                $service ="Airtime";
+                $shortcode ='4040333';
+                $passkey ='d8b8c1b611dee821331f03361047e099475783874a24d426433c7528b951d6ca';
+                $timestamp = date('YmdHis');
+                $password = base64_encode($shortcode.$passkey.$timestamp);
+
+                $ch = curl_init($url);
+                curl_setopt($ch,  CURLOPT_HTTPHEADER,
+                    ['Authorization: '.$accessToken,
+                    'Content-Type: application/json'
+                    ]);
+                //$end = 'https://164.90.133.19:1010/stk/resp.php';
+                //$end2 = 'https://164.90.133.19:4040/api/resp/c2b';
+                $request = array(
+                    'BusinessShortCode'=>$shortcode,
+                    'Password' =>$password,
+                    'Timestamp' =>$timestamp,
+                    'TransactionType' => 'CustomerPayBillOnline',
+                    'Amount' => (int)$amount,
+                    'PartyA' => $msisdn,
+                    'PartyB' => $shortcode,
+                    'PhoneNumber' => '254'.$msisdn,
+                    'CallBackURL' => 'https://164.90.133.19:4040/api/resp/stk',
+                    'AccountReference' => 'EazyTopup',
+                    'TransactionDesc' => $service
+                );
+
+                $requestBody = json_encode($request);
+
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                $response = curl_exec($ch);
+                $this->log_stk($response);
+
+
+                if($response === FALSE)
                 {
-                    case "200":  # OK
+                    $resp ='Request Error:' . curl_error($ch);
 
-                    $requestVals = json_decode($response, TRUE);
-                    $MerchantRequestID = isset($requestVals['MerchantRequestID']) ? $requestVals['MerchantRequestID'] : '';
-                    $CheckoutRequestID = isset($requestVals['CheckoutRequestID']) ? $requestVals['CheckoutRequestID'] : '';
-                    $ResponseCode = isset($requestVals['ResponseCode']) ? $requestVals['ResponseCode'] : '';
-                    $ResponseDescription = isset($requestVals['ResponseDescription']) ? $requestVals['ResponseDescription'] : 'No Response';
-                    $CustomerMessage = isset($requestVals['CustomerMessage']) ? $requestVals['CustomerMessage'] : '';
+                    $this->log_stk($resp);
 
-                    if ($ResponseCode == '0')//success
+                }
+                else
+                {
+
+                    $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+                    switch($http_code)
                     {
-                        $status = 1;
-                    }
+                        case "200":  # OK
 
-                     $resp = DB::table('mpesa_txn')->insert([
-                            'MerchantRequestID' => $MerchantRequestID,
-                            'CheckoutRequestID' => $CheckoutRequestID,
-                            'ResponseCode'=> $ResponseCode,
-                            'ResponseDescription' => $ResponseDescription,
-                            'CustomerMessage' => $CustomerMessage,
-                            'PhoneNumber' => '254'.$msisdn,
-                            'Amount' => $amount
+                        $requestVals = json_decode($response, TRUE);
+                        $MerchantRequestID = isset($requestVals['MerchantRequestID']) ? $requestVals['MerchantRequestID'] : '';
+                        $CheckoutRequestID = isset($requestVals['CheckoutRequestID']) ? $requestVals['CheckoutRequestID'] : '';
+                        $ResponseCode = isset($requestVals['ResponseCode']) ? $requestVals['ResponseCode'] : '';
+                        $ResponseDescription = isset($requestVals['ResponseDescription']) ? $requestVals['ResponseDescription'] : 'No Response';
+                        $CustomerMessage = isset($requestVals['CustomerMessage']) ? $requestVals['CustomerMessage'] : '';
+
+                        if ($ResponseCode == '0')//success
+                        {
+                            $status = 1;
+                        }
+
+                        $resp = DB::table('mpesa_txn')->insert([
+                                'MerchantRequestID' => $MerchantRequestID,
+                                'CheckoutRequestID' => $CheckoutRequestID,
+                                'ResponseCode'=> $ResponseCode,
+                                'ResponseDescription' => $ResponseDescription,
+                                'CustomerMessage' => $CustomerMessage,
+                                'PhoneNumber' => '254'.$msisdn,
+                                'Amount' => $amount
+
+                            ]);
+                        $mq = DB::table('trans_txn')->insertOrIgnore([
+                            'amount' => $amount,
+                            'number' => $msisdn,
+                            'msisdn'=> $msisdn
 
                         ]);
 
-                    $message = $ResponseDescription;
-                    $status = "info";
-                    return redirect()->route('buy_airtime')->with(['msg' => $message,'state' =>$status]);
+                        $message = $ResponseDescription;
+                        $status = "info";
+                        return redirect()->route('buy_airtime')->with(['msg' => $message,'state' =>$status]);
 
-                    break;
+                        break;
 
-                    default:
-                    $data = json_decode($response);
-                    $requestId=$data->requestId;
-                    $errorCode=$data->errorCode;
-                    $errorMessage=$data->errorMessage;
-                    $resp="|HTTP_CODE: ".$http_code."|errorCode: ".$errorCode."|message: ".$errorMessage;
+                        default:
+                        $data = json_decode($response);
+                        $requestId=$data->requestId;
+                        $errorCode=$data->errorCode;
+                        $errorMessage=$data->errorMessage;
+                        $resp="|HTTP_CODE: ".$http_code."|errorCode: ".$errorCode."|message: ".$errorMessage;
 
-                    $res = DB::table('mpesa_txn')->insert([
-                        'requestId' => $requestId,
-                        'errorCode' => $errorCode,
-                        'errorMessage' => $errorMessage
+                        // $res = DB::table('mpesa_txn')->insert([
+                        //     'requestId' => $requestId,
+                        //     'errorCode' => $errorCode,
+                        //     'errorMessage' => $errorMessage
 
-                    ]);
+                        // ]);
 
-                    $this->log_stk($res);
+                        $this->log_stk($resp);
 
-                    $message = $errorMessage;
-                    $status = "danger";
-                    return redirect()->route('buy_airtime')->with(['msg' => $message,'state' =>$status]);
+                        $message = $errorMessage;
+                        $status = "danger";
+                        return redirect()->route('buy_airtime')->with(['msg' => $message,'state' =>$status]);
 
-                    break;
+                        break;
 
+                    }
                 }
+
+
+                curl_close($ch);
             }
-
-
-            curl_close($ch);
         }
+        return redirect()->route('login');
 
     }
     public function Number($msisdn)
@@ -480,10 +492,10 @@ class BuyAirtimeController extends Controller
         $status = 0;
         $description = "";
 
-        $url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
-        $prod = 'https://api.safaricom.co.ke/oauth2/v3/generate?grant_type=client_credentials';
+        //$test = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
+        $url = 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
 
-        $auth = base64_encode('mPxf8stqVzAQZfp91hS6nsYyESiRGLwq:DKHZWt0tjWfGPnC8');
+        $auth = base64_encode('ow4WQdSzfPGcLbdZ9J3y203mcngxObNr:gWEJCOILeGPiVyh2');
 
 
         $curl = curl_init($url);
@@ -515,6 +527,11 @@ class BuyAirtimeController extends Controller
         $array = array('status' => $status, 'access_token' => $accessToken, 'description' => $description);
 
         return json_encode($array);
+    }
+
+    public function validateAmount($pesa)
+    {
+
     }
 
     public function callback(Request $request)
@@ -745,7 +762,15 @@ class BuyAirtimeController extends Controller
 
         if($mq)
         {
-            $this->stkpush($request);
+            $resp = array(
+                'message' => 'Success. Request accepted for processing',
+                'number' => $number,
+                'amount' => $pesa
+            );
+            $resp = json_encode($resp);
+            echo $resp;
+
+            $this->webStkpush($number,$pesa);
         }
 
     }
@@ -766,7 +791,14 @@ class BuyAirtimeController extends Controller
 
         if($mq)
         {
-            $this->stkpush($request);
+            $resp = array(
+                'message' => 'Success. Request accepted for processing',
+                'number' => $number,
+                'amount' => $pesa
+            );
+            $resp = json_encode($resp);
+            echo $resp;
+            $this->webStkpush($number,$pesa);
         }
 
 
@@ -955,14 +987,14 @@ class BuyAirtimeController extends Controller
                     $errorMessage=$data->errorMessage;
                     $resp="|HTTP_CODE: ".$http_code."|errorCode: ".$errorCode."|message: ".$errorMessage;
 
-                    $res = DB::table('mpesa_txn')->insert([
-                        'requestId' => $requestId,
-                        'errorCode' => $errorCode,
-                        'errorMessage' => $errorMessage
+                    // $res = DB::table('mpesa_txn')->insert([
+                    //     'requestId' => $requestId,
+                    //     'errorCode' => $errorCode,
+                    //     'errorMessage' => $errorMessage
 
-                    ]);
+                    // ]);
 
-                    $this->log_stk($res);
+                    $this->log_stk($resp);
 
                     $message = $errorMessage;
                     $status = "danger";
