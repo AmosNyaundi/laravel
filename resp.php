@@ -9,42 +9,50 @@ function log_this($lmsg)
         fclose($f);
  }
 
+//  $msisdn = "707772715";
+//  $amount = 10;
+//  $transId = rand(5,10);
+//  $transId = strtoupper($transId);
 
+//         $test = 'https://157.230.92.224:4835/call.php';
+//         $ch = curl_init($test);
+//         curl_setopt($ch,  CURLOPT_HTTPHEADER,
+//             [
+//             'Content-Type: application/json'
+//             ]);
+
+//         $request = '{
+//             "msisdn":"'.$msisdn.'",
+//             "transId":"'.$transId.'",
+//             "amount":"'.$amount.'",
+//             }';
+
+//         curl_setopt($ch, CURLOPT_POST,1);
+//         curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
+//         //curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+//         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+//         $result = curl_exec($ch);
+//         $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//         curl_close($ch);
+
+/*
 function recharge($amount,$msisdn,$service,$result)
 {
 
-    $test = 'https://sandbox.safaricom.co.ke/v1/pretups/api/recharge';
-    $prod = 'https://prod.safaricom.co.ke/v1/pretups/api/recharge';
-
-    $auth = "ytyt";
-    $pin = base64_encode('9090');
-    $amt = (int)$amount*100;
-
-    $ch = curl_init($test);
-    curl_setopt($ch,  CURLOPT_HTTPHEADER,
-        ['Authorization: Bearer '.$auth,
-        'Content-Type: application/json'
-        ]);
-
-    $request = '{
-        "senderMsisdn":"254748248717",
-        "amount":"'.$amt.'",
-        "servicePin":"'.$pin.'",
-        "receiverMsisdn":"'.$msisdn.'"
-        }';
-
-    curl_setopt($ch, CURLOPT_POST,1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$phone.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
 
-    $response = curl_exec($ch);
-
+    $result = curl_exec($ch);
+    echo $result;
 
     if(curl_errno($ch))
     {
         $resp ='Request Error:' . curl_error($ch);
         log_this($resp);
+        echo $resp;
     }
     else
     {
@@ -84,3 +92,45 @@ function recharge($amount,$msisdn,$service,$result)
     curl_close($ch);
 
 }
+*/
+
+
+   $url = 'https://157.230.92.224:4835/call.php';
+
+
+    $ch = curl_init($url);
+
+    //$status="200";
+    $msisdn = "707772715";
+    $amount = 10;
+    $transId = rand(5,10);
+    $transId = strtoupper($transId);
+
+    $customHeaders = array(
+        'Content-Type: application/json');
+    $request= '{
+        "msisdn":"'.$msisdn.'",
+        "transId":"'.$transId.'",
+        "amount":"'.$amount.'"
+   }';
+
+    curl_setopt($ch, CURLOPT_POST,1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $customHeaders);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    $result = curl_exec($ch);
+    echo $result;
+    if(curl_errno($ch))
+    {
+        echo 'Request Error:' . curl_error($ch);
+    }
+    else
+    {
+       $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        echo $result;
+   }
+
+
+

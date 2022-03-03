@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
 
 class BuyAirtimeController extends Controller
 {
@@ -293,6 +293,7 @@ class BuyAirtimeController extends Controller
     {
         if(Auth::check())
         {
+            auth()->user()->username;
 
             $request->validate([
                 'number' => 'required |regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:10',
@@ -303,7 +304,7 @@ class BuyAirtimeController extends Controller
             $amount = $request['pesa'];
             $now = Carbon::now();
 
-            $msisdn = $this->Number($phone);
+            $msisdn = $this->phoneNumber($phone);
 
             $savedToken = DB::table('mpesa_token')
                 ->orderByDesc('id')
@@ -451,14 +452,6 @@ class BuyAirtimeController extends Controller
         return redirect()->route('login');
 
     }
-    public function Number($msisdn)
-    {
-        $justNums = preg_replace("/[^0-9]/", '', $msisdn);
-
-            $justNums = preg_replace("/^0/", '',$justNums);
-
-            return $justNums;
-    }
 
     private function FreshOne()
     {
@@ -587,6 +580,7 @@ class BuyAirtimeController extends Controller
             $user = DB::table('trans_txn')->where('number', $PhoneNumber)->latest()->first();
 
             $phone = $user->msisdn;
+            //$phone = $PhoneNumber;
 
             $this->airtime($amount,$phone,$MpesaReceiptNumber);
 
@@ -620,7 +614,7 @@ class BuyAirtimeController extends Controller
 
     }
 
-    public function airtime($amount,$phone,$MpesaReceiptNumber)
+    /*public function abuju($amount,$phone,$MpesaReceiptNumber)
     {
         $msisdn = $this->phoneNumber($phone);
         $now = Carbon::now();
@@ -745,6 +739,50 @@ class BuyAirtimeController extends Controller
         }
 
 
+    }*/
+
+    public function airtime($amount,$phone,$MpesaReceiptNumber)
+    {
+        $msisdn = $this->phoneNumber($phone);
+        $transId = Str::random(10);
+        $transId = strtoupper($transId);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+
+        $result = curl_exec($ch);
+        if (curl_errno($ch)) {
+            $error = 'Error:' . curl_error($ch);
+            $this->log_this($error);
+        }
+        $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $this->log_this($result);
+
+        DB::table('purchase')
+            ->where('mpesaReceipt', $MpesaReceiptNumber)
+            ->limit(1)
+            ->update([
+                'astatus' => 200,
+                'PhoneNumber' => $msisdn,
+                'transId' => $transId
+            ],
+            [
+                'transId' => $transId,
+                'mpesaReceipt' => $MpesaReceiptNumber
+            ]);
+
+            DB::table('air_txn')->insert([
+                'responseId' => "NA",
+                'responseStatus' => $http_code,
+                'responseDesc' => "Success",
+                'receiverMsisdn' => $msisdn,
+                'amount' => $amount,
+                'transId' => $transId
+            ]);
     }
 
     public function self(Request $request)
