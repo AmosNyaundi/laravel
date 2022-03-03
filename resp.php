@@ -134,3 +134,134 @@ function recharge($amount,$msisdn,$service,$result)
 
 
 
+
+   <?php
+
+$data=file_get_contents('php://input');
+
+$request = json_decode($data);
+
+/*
+$msisdn = $request->msisdn;
+$transId = $request->transId;
+$amount = $request->$amount;
+
+function recharge($amount,$msisdn,$transId)
+{
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+
+    $result = curl_exec($ch);
+   // echo $result;
+
+    if(curl_errno($ch))
+    {
+        $resp ='Request Error:' . curl_error($ch);
+        log_this($resp);
+        echo $resp;
+    }
+    else
+    {
+            $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            switch($http_code)
+            {
+                  case "200":  # OK
+                  echo $result;
+                  break;
+
+                  default:
+                        echo "Failed. Try again";
+
+                  break;
+            }
+      }
+
+      curl_close($ch);
+}
+*/
+function log_flow($lmsg)
+{
+      $flog = sprintf("/var/log/popsms/KimTai_%s.log",date("Ymd-H"));
+      $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+      $f = fopen($flog, "a");
+      fwrite($f,$tlog);
+      fclose($f);
+}
+
+//echo recharge($amount,$msisdn,$transId);
+
+echo log_flow("RESP:".$data);
+
+// if ($_SERVER['REQUEST_METHOD'] == 'POST')
+// {
+//       function get_data() {
+//             $datae = array(
+//                   'Name' => $_POST['name'],
+//                   'Email' => $_POST['email'],
+//                   'Message' => $_POST['message'],
+//             );
+
+//             return json_encode($datae);
+//       }
+// }
+
+
+//$data = get_data();
+//log_flow("RESP:".$data);
+
+    // $link = mysqli_connect("localhost", "root", "M1234!agre", "laravel");
+
+    //   $request = json_decode($data);
+
+    //  $ResultCode=$request->Body->stkCallback->ResultCode;
+
+
+    // //echo $ResultCode;
+
+    // if($ResultCode === 0)
+    // {
+    //   $MerchantRequestID = $request->Body->stkCallback->MerchantRequestID;
+    //   $CheckoutRequestID = $request->Body->stkCallback->CheckoutRequestID;
+    //   $amount = $request->Body->stkCallback->CallbackMetadata->Item[0]->Value;
+    //   $MpesaReceiptNumber = $request->Body->stkCallback->CallbackMetadata->Item[1]->Value;
+    //   $TransactionDate = $request->Body->stkCallback->CallbackMetadata->Item[3]->Value;
+    //   $PhoneNumber = $request->Body->stkCallback->CallbackMetadata->Item[4]->Value;
+    //   $Balance = $request->Body->stkCallback->CallbackMetadata->Item[2]->Value;
+    //   $ResultDesc = $request->Body->stkCallback->ResultDesc;
+
+    //     $resp = "Amount: ".$amount." MpesaReceiptNumber: ".$MpesaReceiptNumber." TransactionDate: ".$TransactionDate." PhoneNumber: ".$PhoneNumber;
+
+    //     $mql = "UPDATE mpesa_txn  SET ResultCode='$ResultCode',ResultDesc='$ResultDesc',Amount='$amount',MpesaReceiptNumber='$MpesaReceiptNumber',
+    //     TransactionDate='$TransactionDate',PhoneNumber='$PhoneNumber',Balance='$Balance' WHERE MerchantRequestID='$MerchantRequestID'";
+
+    //     $mq = "INSERT INTO purchase(mpesaReceipt,amount,mstatus,msisdn) VALUES('','','','',)";
+
+    //     mysqli_query($link, $mql);
+
+    //     //mysqli_close($link);
+
+    //     log_flow("RESP:".$resp);
+    // }
+    // else
+    // {
+    //   $CheckoutRequestID = $request->Body->stkCallback->CheckoutRequestID;
+    //   $MerchantRequestID = $request->Body->stkCallback->MerchantRequestID;
+    //   $ResultDesc = $request->Body->stkCallback->ResultDesc;
+
+    //   $mql2 = "UPDATE mpesa_txn  SET ResultCode='$ResultCode',ResultDesc='$ResultDesc',MerchantRequestID='$MerchantRequestID',
+    //   CheckoutRequestID='$CheckoutRequestID', MpesaReceiptNumber='NA' WHERE MerchantRequestID='$MerchantRequestID'";
+
+    //   mysqli_query($link, $mql2);
+
+    //   //mysqli_close($link);
+
+    //   log_flow("RESP:".$data);
+
+    // }
+
+    //log_flow("RESP:".$datae);
+
+
