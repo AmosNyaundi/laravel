@@ -68,7 +68,7 @@ class C2BController extends BuyAirtimeController
             'msisdn' => $sender
         ]);
 
-        $this->kredo($amount,$phone,$MpesaReceiptNumber);
+        $this->kredo($amount,$phone,$MpesaReceiptNumber,$sender);
 
 
         // $response = '{
@@ -86,56 +86,37 @@ class C2BController extends BuyAirtimeController
         //     "MiddleName":"NGISA",
         //     "LastName":"NYAUNDI"
         // }';
-
-        // $phone = "707772715";
-        // $amt = 10;
-        // $time = time();
-        // $transId = rand($time);
-       //`curl -X POST "http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid=$transId&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge=$amt&mobileno=$phone&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0" `
-
     }
 
-    public function kredo($amount,$phone,$MpesaReceiptNumber)
+    public function kredo($amount,$phone,$MpesaReceiptNumber,$sender)
     {
         $msisdn = $this->phoneNumber($phone);
-        $transId = Str::random(10);
+        $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
 
 
-        // $ch = curl_init();
-        // curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
-        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // curl_setopt($ch, CURLOPT_POST, 1);
-
-        // $result = curl_exec($ch);
-        // if (curl_errno($ch)) {
-        //     $error = 'Error:' . curl_error($ch);
-        //     $this->log_this($error);
-        // }
-        // $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // curl_close($ch);
-
-        // $this->log_this($result);
-        $test = 'https://157.230.92.224:4835/call.php';
-        $ch = curl_init($test);
-        curl_setopt($ch,  CURLOPT_HTTPHEADER,
-            [
-            'Content-Type: application/json'
-            ]);
-
-        $request = '{
-            "msisdn":"'.$msisdn.'",
-            "transId":"'.$transId.'",
-            "amount":"'.$amount.'",
-            }';
-
-        curl_setopt($ch, CURLOPT_POST,1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
-        //curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        $ch = curl_init();
+        $headers = array();
+        $headers[] = 'Content-Length: 0';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
 
         $result = curl_exec($ch);
-        $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if (curl_errno($ch)) {
+            $error = 'Request Failed::' . curl_error($ch);
+            $this->log_this($error);
+        }
+        //$http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        $data = explode("%$", $result);
+        $merchanttransid = $data[0];
+        $pktransid =$data[1];
+        $transdatetime = $data[2];
+        $responsecode = trim($data[3],"A6.");
+        $responsemessage = trim($data[4],"[SUCCESS:200]");
+        $status = trim($data[5],"$$$");
         curl_close($ch);
 
         $this->log_this($result);
@@ -144,9 +125,9 @@ class C2BController extends BuyAirtimeController
             ->where('mpesaReceipt', $MpesaReceiptNumber)
             ->limit(1)
             ->update([
-                'astatus' =>  $http_code,
+                'astatus' =>  $responsecode,
                 'PhoneNumber' => $msisdn,
-                'transId' => $transId
+                'transId' => $merchanttransid
             ],
             [
                 'transId' => $transId,
@@ -154,12 +135,13 @@ class C2BController extends BuyAirtimeController
             ]);
 
             DB::table('air_txn')->insert([
-                'responseId' => "NA",
-                'responseStatus' => $http_code,
-                'responseDesc' => "Success",
+                'responseId' => $pktransid,
+                'responseStatus' => $responsecode,
+                'responseDesc' => $responsemessage,
                 'receiverMsisdn' => $msisdn,
+                'senderMsisdn' => $sender,
                 'amount' => $amount,
-                'transId' => $transId
+                'transId' => $merchanttransid
             ]);
     }
 
@@ -188,7 +170,6 @@ class C2BController extends BuyAirtimeController
             return $justNums;
 
     }
-
 
 }
 

@@ -356,7 +356,7 @@ class BuyAirtimeController extends Controller
                     'PartyB' => $shortcode,
                     'PhoneNumber' => '254'.$msisdn,
                     'CallBackURL' => 'https://164.90.133.19:4040/api/resp/stk',
-                    'AccountReference' => 'EazyTopup',
+                    'AccountReference' => $msisdn,
                     'TransactionDesc' => $service
                 );
 
@@ -582,7 +582,7 @@ class BuyAirtimeController extends Controller
             $phone = $user->msisdn;
             //$phone = $PhoneNumber;
 
-            $this->airtime($amount,$phone,$MpesaReceiptNumber);
+            //$this->airtime($amount,$phone,$MpesaReceiptNumber);
 
             $this->log_stk("RESP: ".$resp);
         }
@@ -744,17 +744,20 @@ class BuyAirtimeController extends Controller
     public function airtime($amount,$phone,$MpesaReceiptNumber)
     {
         $msisdn = $this->phoneNumber($phone);
-        $transId = Str::random(10);
+        $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
 
         $ch = curl_init();
+        $headers = array();
+        $headers[] = 'Content-Length: 0';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
 
         $result = curl_exec($ch);
         if (curl_errno($ch)) {
-            $error = 'Error:' . curl_error($ch);
+            $error = 'Request Failed:' . curl_error($ch);
             $this->log_this($error);
         }
         $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -766,7 +769,7 @@ class BuyAirtimeController extends Controller
             ->where('mpesaReceipt', $MpesaReceiptNumber)
             ->limit(1)
             ->update([
-                'astatus' => 200,
+                'astatus' => $http_code,
                 'PhoneNumber' => $msisdn,
                 'transId' => $transId
             ],
