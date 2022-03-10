@@ -26,8 +26,8 @@ Route::get('terms', [LoginAuthController::class, 'terms'])->name('terms');
 Route::get('/', [Dashboard::class, 'dashboard'])->name('home');
 Route::get('login', [LoginAuthController::class, 'index'])->name('login');
 Route::post('custom-login', [LoginAuthController::class, 'customLogin'])->name('login.custom');
-Route::get('register', [LoginAuthController::class, 'registration'])->name('register-user');
-Route::post('custom-registration', [LoginAuthController::class, 'customRegistration'])->name('register.custom');
+//Route::get('register', [LoginAuthController::class, 'registration'])->name('register-user');
+//Route::post('custom-registration', [LoginAuthController::class, 'customRegistration'])->name('register.custom');
 Route::get('signout', [LoginAuthController::class, 'signOut'])->name('signout');
 
 //PASSWORD RESET

@@ -36,11 +36,12 @@
                                     <thead>
                                     <tr>
                                         <th scope="col">MpesaReceipt</th>
-                                        <th scope="col">Msisdn</th>
+                                        <th scope="col">Sender</th>
                                         <th scope="col">Amount</th>
                                         <th scope="col">Receiver</th>
                                         <th scope="col">Status</th>
                                         <th scope="col">TransId</th>
+                                        <th scope="col">Reason</th>
                                         <th scope="col">Date</th>
                                         <th scope="col">Action</th>
 
@@ -51,9 +52,9 @@
                                         @foreach($table as $key => $data)
                                             <tr>
                                                 <td>{{$data->mpesaReceipt}}</td>
-                                                <td>{{$data->PhoneNumber}}</td>
-                                                <td>{{number_format($data->amount)}}</td>
                                                 <td>{{$data->msisdn}}</td>
+                                                <td>{{number_format($data->amount)}}</td>
+                                                <td>{{$data->PhoneNumber}}</td>
                                                 @if($data->astatus == 200)
                                                     <td>
                                                         <div class="badge badge-pill badge-info">Success</div>
@@ -65,6 +66,7 @@
                                                     @endif
                                                 {{-- <td>{{ $data->astatus}}</td> --}}
                                                 <td>{{$data->transId}}</td>
+                                                <td>{{$data->reason}}</td>
                                                 <td>{{$data->created_at}}</td>
 
                                                     @if($data->astatus == 200)

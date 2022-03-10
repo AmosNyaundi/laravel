@@ -30,11 +30,30 @@ class C2BController extends BuyAirtimeController
         fclose($f);
     }
 
+    public function log_reverse($lmsg)
+    {
+        $flog = sprintf("/var/log/popsms/reversal%s.log",date("Ymd-H"));
+        $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+        $f = fopen($flog, "a");
+        fwrite($f,$tlog);
+        fclose($f);
+    }
+
+    public function log_error($lmsg)
+    {
+        $flog = sprintf("/var/log/popsms/Error_recharge_%s.log",date("Ymd-H"));
+        $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+        $f = fopen($flog, "a");
+        fwrite($f,$tlog);
+        fclose($f);
+    }
+
     public function lipa(Request $request)
     {
 
         $data = json_encode($request->all());
         $this->log_stk($data);
+        $now = Carbon::now();
 
         $TransType=$request->TransactionType;
         $MpesaReceiptNumber=$request->TransID;
@@ -58,14 +77,17 @@ class C2BController extends BuyAirtimeController
                 'MpesaReceiptNumber' => $MpesaReceiptNumber,
                 'TransactionDate' => $Time,
                 'PhoneNumber' => $sender,
-                'Balance' => $balance
+                'Balance' => $balance,
+                'created_at' => $now
             ]);
 
         DB::table('purchase')->insertOrIgnore([
             'mpesaReceipt' => $MpesaReceiptNumber,
             'amount' => $amount,
             'mstatus'=> 0,
-            'msisdn' => $sender
+            'msisdn' => $sender,
+            'PhoneNumber' => $phone,
+            'created_at' => $now
         ]);
 
         $this->kredo($amount,$phone,$MpesaReceiptNumber,$sender);
@@ -94,62 +116,88 @@ class C2BController extends BuyAirtimeController
         $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
 
+        $circle = substr($msisdn, 0, 3);
+        $code = $this->operator($circle);
 
-        $ch = curl_init();
-        $headers = array();
-        $headers[] = 'Content-Length: 0';
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
+        if (isset($code))
+        {
 
-        $result = curl_exec($ch);
-        if (curl_errno($ch)) {
-            $error = 'Request Failed::' . curl_error($ch);
-            $this->log_this($error);
+            $ch = curl_init();
+            $headers = array();
+            $headers[] = 'Content-Length: 0';
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode='.$code.'&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+
+            $result = curl_exec($ch);
+            $this->log_this($result);
+
+            if (curl_errno($ch)) {
+                $error = 'Request Failed::' . curl_error($ch);
+                $this->log_this($error);
+            }
+            //$http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+            $data = explode("%$", $result);
+            $merchanttransid = $data[0];
+            $pktransid =$data[1];
+            $transdatetime = $data[2];
+            $res = explode(".", $data[3]);
+            $responsecode = $res[1];
+            $responsemessage = trim($data[4],"[SUCCESS:200] ");
+            $status = trim($data[5],"$$$");
+            ///curl_close($ch);
+
+            $this->log_this($result);
+
+            DB::table('purchase')
+                ->where('mpesaReceipt', $MpesaReceiptNumber)
+                ->limit(1)
+                ->update([
+                    'astatus' =>  $responsecode,
+                    'PhoneNumber' => $msisdn,
+                    'transId' => $merchanttransid,
+                    'operator' => $circle,
+                    'reason' => $data
+                ],
+                [
+                    'transId' => $transId,
+                    'mpesaReceipt' => $MpesaReceiptNumber
+                ]);
+
+                DB::table('air_txn')->insert([
+                    'responseId' => $pktransid,
+                    'responseStatus' => $responsecode,
+                    'responseDesc' => $responsemessage,
+                    'receiverMsisdn' => $msisdn,
+                    'senderMsisdn' => $sender,
+                    'amount' => $amount,
+                    'transId' => $merchanttransid,
+
+                ]);
         }
-        //$http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        $data = explode("%$", $result);
-        $merchanttransid = $data[0];
-        $pktransid =$data[1];
-        $transdatetime = $data[2];
-        $responsecode = trim($data[3],"A6.");
-        $responsemessage = trim($data[4],"[SUCCESS:200]");
-        $status = trim($data[5],"$$$");
-        curl_close($ch);
-
-        $this->log_this($result);
-
-        DB::table('purchase')
-            ->where('mpesaReceipt', $MpesaReceiptNumber)
-            ->limit(1)
-            ->update([
-                'astatus' =>  $responsecode,
-                'PhoneNumber' => $msisdn,
-                'transId' => $merchanttransid
-            ],
-            [
-                'transId' => $transId,
-                'mpesaReceipt' => $MpesaReceiptNumber
-            ]);
-
-            DB::table('air_txn')->insert([
-                'responseId' => $pktransid,
-                'responseStatus' => $responsecode,
-                'responseDesc' => $responsemessage,
-                'receiverMsisdn' => $msisdn,
-                'senderMsisdn' => $sender,
-                'amount' => $amount,
-                'transId' => $merchanttransid
-            ]);
+        else
+        {
+            DB::table('purchase')
+                ->where('mpesaReceipt', $MpesaReceiptNumber)
+                ->limit(1)
+                ->update([
+                    'astatus' =>  "400",
+                    'transId' => $transId,
+                    'reason' => $code
+                ],
+                [
+                    'mpesaReceipt' => $MpesaReceiptNumber
+                ]);
+        }
     }
 
     public function reversal(Request $request)
     {
 
         $data = json_encode($request->all());
-        $this->log_stk($data);
+        $this->log_reverse($data);
 
     }
 
@@ -161,13 +209,49 @@ class C2BController extends BuyAirtimeController
 
     }
 
-    public function phoneNumber($msisdn)
+    public function phoneNumber($phone)
     {
-        $justNums = preg_replace("/[^0-9]/", '', $msisdn);
+        $justNums = preg_replace("/[^0-9]/", '', $phone);
 
             $justNums = preg_replace("/^0/", '',$justNums);
 
             return $justNums;
+
+    }
+
+    public function operator($circle)
+    {
+        $airtel =array(730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,785,786,787,788,789,100,101,102);
+
+        $safcom =array(701,702,703,704,705,706,707,708,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,746,748,790,791,792,793,794,795,796,797,798,799,110,111);
+
+        $telkom =array(770,771,772,773,774,775,776,777,778,779);
+
+        $other = array();
+
+        if (in_array($circle, $airtel)) {
+            $code ='1';
+            return $code;
+        }
+        elseif (in_array($circle, $safcom)) {
+            $code ='4';
+            return $code;
+        }
+        elseif (in_array($circle, $telkom)) {
+            $code ='2';
+            return $code;
+        }
+        // elseif (in_array($circle, $other)) {
+        //     $code ='1';
+        //     return $code;
+        // }
+        else{
+            $code= "The mobile number does not exist in our operators";
+            $this->log_error($code);
+            return $code;
+        }
+
+        //return $code;
 
     }
 

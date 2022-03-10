@@ -18,9 +18,9 @@ class Dashboard extends Controller
 
             $user = auth()->user()->username;
 
-            $bal = DB::table('mpesa_txn')
-                    ->latest()
-                    ->first();
+            // $bal = DB::table('mpesa_txn')
+            //         ->latest()
+            //         ->first();
 
             $total_trans = DB::table('air_txn')
                         ->where(['responseStatus' => 200])
@@ -92,7 +92,7 @@ class Dashboard extends Controller
 
             $chart->displayLegend(true);
 
-            return view('pages.home', compact('total_trans','trans','total_air','air','chart','bal'));
+            return view('pages.home', compact('total_trans','trans','total_air','air','chart'));
 
         }
 

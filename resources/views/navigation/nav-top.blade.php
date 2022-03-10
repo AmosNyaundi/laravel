@@ -18,20 +18,22 @@
                <a class="btn btn-info" href="{{ route('txn')}}" role="button"><i class="ri-message-2-line"></i>Transactions </a>
                <a class="btn btn-primary" href="{{ route('buy_airtime')}}" role="button"><i class="ri-arrow-go-forward-line"></i> Buy Airtime</a>
              </div>
-
-
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-
             </div>
-            {{-- @foreach($bal as $key => $data) --}}
-            <button type="button" class="btn mb-1 btn-danger">Balance:
-                {{-- Balance: {{ number_format($bal->Balance) }} {{ Balance::latest()->first() }} --}}
+
+            @php
+            $bal = DB::table('mpesa_txn')
+                    ->latest()
+                    ->first();
+            @endphp
+            <button type="button" class="btn mb-1 btn-danger">Balance: KES
+               {{ number_format($bal->Balance) }}
             </button>
-            {{-- @endforeach --}}
 
             <ul class="navbar-list">
                 <li class="line-height">
-                    <a href="#" class="search-toggle iq-waves-effect d-flex align-items-center">
+                    <a href="#" class="search-toggle
+                     iq-waves-effect d-flex align-items-center">
                         <img src="{{ asset('user/images/user/'.(auth()->user()->face_image??'1.png')) }}"
                              class="img-fluid rounded mr-3" alt="user">
                         <div class="caption">

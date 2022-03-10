@@ -404,9 +404,10 @@ class BuyAirtimeController extends Controller
                                 'ResponseDescription' => $ResponseDescription,
                                 'CustomerMessage' => $CustomerMessage,
                                 'PhoneNumber' => '254'.$msisdn,
-                                'Amount' => $amount
-
+                                'Amount' => $amount,
+                                'created_at' => $now
                             ]);
+                            
                         $mq = DB::table('trans_txn')->insertOrIgnore([
                             'amount' => $amount,
                             'number' => $msisdn,

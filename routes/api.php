@@ -27,6 +27,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::post('resp/stk', [BuyAirtimeController::class, 'callback']);
 Route::post('resp/c2b', [C2BController::class, 'lipa']);
+Route::post('reversal', [C2BController::class, 'reversal']);
 Route::post('app/self', [BuyAirtimeController::class, 'self']);
 Route::post('app/other', [BuyAirtimeController::class, 'other']);
 Route::post('web/self', [BuyAirtimeController::class, 'webSelf']);

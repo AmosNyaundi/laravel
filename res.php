@@ -66,3 +66,5 @@ echo $response;
 authToken();
 
 
+$data ='{"Result":{"ResultType":0,"ResultCode":2001,"ResultDesc":"The initiator information is invalid.","OriginatorConversationID":"27636-83026175-1","ConversationID":"AG_20220308_20506a4874f5c3533ba2","TransactionID":"QC81CCM7FX","ResultParameters":{"ResultParameter":[{"Key":"DebitAccountBalance","Value":"Utility Account|KES|391.00|391.00|0.00|0.00"},{"Key":"Amount","Value":50},{"Key":"TransCompletedTime","Value":20220308144006},{"Key":"OriginalTransactionID","Value":"QC87C09O5H"},{"Key":"Charge","Value":0},{"Key":"CreditPartyPublicName","Value":"0794548832 - Jennifer Rehema Kitsao"},{"Key":"DebitPartyPublicName","Value":"4040333 - CHECHI LIMITED"}]},"ReferenceData":{"ReferenceItem":{"Key":"QueueTimeoutURL","Value":"https:\/\/internalapi.safaricom.co.ke\/mpesa\/reversalresults\/v1\/submit"}}}}
+';
