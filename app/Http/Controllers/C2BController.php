@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
@@ -134,8 +133,21 @@ class C2BController extends BuyAirtimeController
             $this->log_this($result);
 
             if (curl_errno($ch)) {
+                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 $error = 'Request Failed::' . curl_error($ch);
                 $this->log_this($error);
+
+                DB::table('purchase')
+                ->where('mpesaReceipt', $MpesaReceiptNumber)
+                ->limit(1)
+                ->update([
+                    'astatus' =>  $http_code,
+                    'transId' => $transId,
+                    'reason' => $error
+                ],
+                [
+                    'mpesaReceipt' => $MpesaReceiptNumber
+                ]);
             }
             //$http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
@@ -156,7 +168,7 @@ class C2BController extends BuyAirtimeController
                 ->limit(1)
                 ->update([
                     'astatus' =>  $responsecode,
-                    'PhoneNumber' => $msisdn,
+                    'PhoneNumber' => '0'.$msisdn,
                     'transId' => $merchanttransid,
                     'operator' => $circle,
                     'reason' => $data
@@ -170,7 +182,7 @@ class C2BController extends BuyAirtimeController
                     'responseId' => $pktransid,
                     'responseStatus' => $responsecode,
                     'responseDesc' => $responsemessage,
-                    'receiverMsisdn' => $msisdn,
+                    'receiverMsisdn' => '0'.$msisdn,
                     'senderMsisdn' => $sender,
                     'amount' => $amount,
                     'transId' => $merchanttransid,
@@ -221,7 +233,7 @@ class C2BController extends BuyAirtimeController
 
     public function operator($circle)
     {
-        $airtel =array(730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,785,786,787,788,789,100,101,102);
+        $airtel =array(730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,783,784,785,786,787,788,789,100,101,102);
 
         $safcom =array(701,702,703,704,705,706,707,708,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,746,748,790,791,792,793,794,795,796,797,798,799,110,111);
 
