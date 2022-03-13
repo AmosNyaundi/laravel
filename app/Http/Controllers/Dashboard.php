@@ -22,25 +22,25 @@ class Dashboard extends Controller
             //         ->latest()
             //         ->first();
 
-            $total_trans = DB::table('air_txn')
-                        ->where(['responseStatus' => 200])
+            $total_trans = DB::table('purchase')
+                        ->where(['astatus' => 200])
                         ->whereMonth('created_at', Carbon::now()->month)
                         ->count();
 
-            $total_air = DB::table('mpesa_txn')
-                        ->where('ResultCode', '=', 0)
-                        ->whereMonth('TransactionDate', Carbon::now()->month)
-                        ->sum('Amount');
+            $total_air = DB::table('purchase')
+                        ->where('astatus', '=', 200)
+                        ->whereMonth('created_at', Carbon::now()->month)
+                        ->sum('amount');
 
-            $trans =    DB::table('mpesa_txn')
-                        ->where(['ResultCode' => 0])
-                        ->whereDate('TransactionDate', Carbon::today())
+            $trans =    DB::table('purchase')
+                        ->where(['astatus' => 200])
+                        ->whereDate('created_at', Carbon::today())
                         ->count();
 
-            $air =      DB::table('mpesa_txn')
-                        ->where('ResultCode', '=', 0)
-                        ->whereDate('TransactionDate', Carbon::today())
-                        ->sum('Amount');
+            $air =      DB::table('purchase')
+                        ->where('astatus', '=', 200)
+                        ->whereDate('created_at', Carbon::today())
+                        ->sum('amount');
 
 
             $airtime =  DB::table('air_txn')

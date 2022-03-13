@@ -40,7 +40,7 @@ class C2BController extends BuyAirtimeController
 
     public function log_error($lmsg)
     {
-        $flog = sprintf("/var/log/popsms/Error_recharge_%s.log",date("Ymd-H"));
+        $flog = sprintf("/var/log/popsms/error_recharge_%s.log",date("Ymd-H"));
         $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
         $f = fopen($flog, "a");
         fwrite($f,$tlog);
@@ -132,10 +132,12 @@ class C2BController extends BuyAirtimeController
             $result = curl_exec($ch);
             $this->log_this($result);
 
-            if (curl_errno($ch)) {
+            if (curl_errno($ch))
+            {
                 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $error = 'Request Failed::' . curl_error($ch);
+                $error = 'Failed:' . curl_error($ch);
                 $this->log_this($error);
+                $this->log_error($error);
 
                 DB::table('purchase')
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
@@ -149,33 +151,35 @@ class C2BController extends BuyAirtimeController
                     'mpesaReceipt' => $MpesaReceiptNumber
                 ]);
             }
-            //$http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            else
+            {
+                $data = explode("%$", $result);
+                $merchanttransid = $data[0];
+                $pktransid =$data[1];
+                $transdatetime = $data[2];
+                $res = explode(".", $data[3]);
+                $responsecode = $res[1];
+                $responsemessage = trim($data[4],"[SUCCESS:200] ");
+                $status = trim($data[5],"$$$");
+                ///curl_close($ch);
 
-            $data = explode("%$", $result);
-            $merchanttransid = $data[0];
-            $pktransid =$data[1];
-            $transdatetime = $data[2];
-            $res = explode(".", $data[3]);
-            $responsecode = $res[1];
-            $responsemessage = trim($data[4],"[SUCCESS:200] ");
-            $status = trim($data[5],"$$$");
-            ///curl_close($ch);
+                //$this->log_this($result);
+                $balance = $this->pin_bal();
 
-            $this->log_this($result);
-
-            DB::table('purchase')
-                ->where('mpesaReceipt', $MpesaReceiptNumber)
-                ->limit(1)
-                ->update([
-                    'astatus' =>  $responsecode,
-                    'PhoneNumber' => '0'.$msisdn,
-                    'transId' => $merchanttransid,
-                    'operator' => $circle,
-                    'reason' => $data
-                ],
-                [
-                    'transId' => $transId,
-                    'mpesaReceipt' => $MpesaReceiptNumber
+                DB::table('purchase')
+                    ->where('mpesaReceipt', $MpesaReceiptNumber)
+                    ->limit(1)
+                    ->update([
+                        'astatus' =>  $responsecode,
+                        'PhoneNumber' => '0'.$msisdn,
+                        'transId' => $merchanttransid,
+                        'operator' => $circle,
+                        'reason' => $data,
+                        'balance' => $balance
+                    ],
+                    [
+                        'transId' => $transId,
+                        'mpesaReceipt' => $MpesaReceiptNumber
                 ]);
 
                 DB::table('air_txn')->insert([
@@ -185,9 +189,9 @@ class C2BController extends BuyAirtimeController
                     'receiverMsisdn' => '0'.$msisdn,
                     'senderMsisdn' => $sender,
                     'amount' => $amount,
-                    'transId' => $merchanttransid,
-
+                    'transId' => $merchanttransid
                 ]);
+            }
         }
         else
         {
@@ -195,9 +199,9 @@ class C2BController extends BuyAirtimeController
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
                 ->limit(1)
                 ->update([
-                    'astatus' =>  "400",
+                    'astatus' => 400,
                     'transId' => $transId,
-                    'reason' => $code
+                    'reason' => 'The mobile number does not exist.'
                 ],
                 [
                     'mpesaReceipt' => $MpesaReceiptNumber
@@ -241,30 +245,51 @@ class C2BController extends BuyAirtimeController
 
         $other = array();
 
-        if (in_array($circle, $airtel)) {
+        if (in_array($circle, $airtel))
+        {
             $code ='1';
             return $code;
         }
-        elseif (in_array($circle, $safcom)) {
+        elseif (in_array($circle, $safcom))
+        {
             $code ='4';
             return $code;
         }
-        elseif (in_array($circle, $telkom)) {
+        elseif (in_array($circle, $telkom))
+        {
             $code ='2';
             return $code;
         }
-        // elseif (in_array($circle, $other)) {
-        //     $code ='1';
-        //     return $code;
-        // }
-        else{
-            $code= "The mobile number does not exist in our operators";
-            $this->log_error($code);
-            return $code;
+        else
+        {
+            $resp= "The mobile number does not exist in our operators";
+            $this->log_error($resp);
+            //return $resp;
         }
 
-        //return $code;
+    }
 
+    public function pin_bal()
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_query.php3?agentid=61&query=balance&loginstatus=LIVE&service=FLEXI&appver=1.0');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+
+        $headers = array();
+        $headers[] = 'Accept: plain/text';
+        $headers[] = 'Content-Type: plain/text';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $result = curl_exec($ch);
+        if (curl_errno($ch)) {
+            $err = 'Balance Error:' . curl_error($ch);
+            $this->log_error($err);
+        }
+
+        $balance = trim($result,"$$$");
+        return $balance;
+        curl_close($ch);
     }
 
 }

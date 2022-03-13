@@ -40,6 +40,7 @@ Route::post('reset-password', [ForgotPasswordController::class, 'submitResetPass
 Route::get('mpesa', [MpesaTxnController::class, 'index'])->name('mpesa');
 Route::get('balance', [MpesaTxnController::class, 'bal'])->name('balance');
 Route::get('transactions', [TxnController::class, 'show'])->name('txn');
+Route::get('txn', [TxnController::class, 'txn'])->name('all');
 
 //AIRTIME TRANSACTIONS
 Route::get('airtime', [AirTxnController::class, 'index'])->name('airtime_txn');

@@ -14,13 +14,13 @@
                             <div class="iq-box-absolute icon iq-icon-box rounded-circle iq-bg-primary">
                                 <i class="las la-users"></i>
                             </div>
-                            <p class="text-secondary">Total Transactions</p>
+                            <p class="text-secondary">Total Transactions (Airtime)</p>
                             <div class="d-flex align-items-center justify-content-between">
 
                                 <h4><b> {{ number_format($total_trans) }} </b></h4>
 
                                 <span class="text-danger">
-                                  <a href="airtime"> View
+                                  <a href="txn"> View
                                       <i class="ri-arrow-right-fill"></i>
                                   </a>
                                 </span>
@@ -39,7 +39,7 @@
                             <div class="d-flex align-items-center justify-content-between">
 
                                 <h4><b>KES {{ number_format($total_air) }}</b></h4>
-                                <span ><b><a href="mpesa" class="text-danger"> View <i class="ri-arrow-right-fill"></i></a></b></span>
+                                <span ><b><a href="#" class="text-danger"> View <i class="ri-arrow-right-fill"></i></a></b></span>
                             </div>
                         </div>
                     </div>
@@ -51,11 +51,11 @@
                             <div class="iq-box-absolute icon iq-icon-box rounded-circle iq-bg-success">
                                 <i class="ri-database-2-line"></i>
                             </div>
-                            <p class="text-secondary">Today Transactions</p>
+                            <p class="text-secondary">Today Transactions (MPESA)</p>
                             <div class="d-flex align-items-center justify-content-between">
 
                                 <h4><b>{{ number_format($trans) }}</b></h4>
-                                <span ><b><a href="airtime" class="text-success"> View <i class="ri-arrow-right-fill"></i></a></b></span>
+                                <span ><b><a href="mpesa" class="text-success"> View <i class="ri-arrow-right-fill"></i></a></b></span>
                             </div>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                             <div class="d-flex align-items-center justify-content-between">
 
                                 <h4><b>KES {{ number_format($air) }}</b></h4>
-                                <span ><b><a href="mpesa" class="text-info"> View <i class="ri-arrow-right-fill"></i></a></b></span>
+                                <span ><b><a href="transactions" class="text-info"> View <i class="ri-arrow-right-fill"></i></a></b></span>
                             </div>
                         </div>
                     </div>
@@ -94,7 +94,7 @@
             </div>
         </div>
     </div>
-    
+
     {!! $chart->script() !!}
 
 @endsection

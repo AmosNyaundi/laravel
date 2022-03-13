@@ -22,12 +22,17 @@
             </div>
 
             @php
-            $bal = DB::table('mpesa_txn')
+            $mpesa = DB::table('mpesa_txn')
+                    ->latest()
+                    ->first();
+            $air = DB::table('purchase')
+                    ->where(['astatus' => 200])
                     ->latest()
                     ->first();
             @endphp
-            <button type="button" class="btn mb-1 btn-danger">Balance: KES
-               {{ number_format($bal->Balance) }}
+
+            <button type="button" class="btn mb-1 btn-danger"><marquee>Mpesa: KES {{ number_format($mpesa->Balance) }} ||
+                Airtime: KES {{ number_format($air->balance) }}</marquee>
             </button>
 
             <ul class="navbar-list">

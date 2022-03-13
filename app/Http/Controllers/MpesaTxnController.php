@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 
 class MpesaTxnController extends Controller
@@ -22,6 +23,8 @@ class MpesaTxnController extends Controller
 
             $table = DB::table('mpesa_txn')
                     //->orderBy('TransactionDate','DESC')
+                    ->whereDate('created_at', Carbon::today())
+                    ->orderBy('created_at','DESC')
                     ->latest()
                     ->get();
 
@@ -43,12 +46,9 @@ class MpesaTxnController extends Controller
             $user = auth()->user()->username;
 
             $table = DB::table('mpesa_txn')
-
+                ->whereDate('created_at', Carbon::today())
                 ->orderBy('created_at','DESC')
                 ->get();
-
-                // ->chunk(100, function($rows){});
-
             return view('pages.mpesatxn',['table' => $table]);
         }
         //$message = "Session timeout!";
