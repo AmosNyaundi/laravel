@@ -13,7 +13,7 @@ class C2BController extends BuyAirtimeController
 
     public function log_stk($lmsg)
     {
-        $flog = sprintf("/var/log/popsms/C2B%s.log",date("Ymd-H"));
+        $flog = sprintf("/var/log/popsms/C2B_%s.log",date("Ymd-H"));
         $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
         $f = fopen($flog, "a");
         fwrite($f,$tlog);
@@ -128,9 +128,23 @@ class C2BController extends BuyAirtimeController
             curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode='.$code.'&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POST, 1);
-
             $result = curl_exec($ch);
             $this->log_this($result);
+
+            DB::table('purchase')
+                ->where('mpesaReceipt', $MpesaReceiptNumber)
+                ->limit(1)
+                ->update([
+                    'astatus' => 400,
+                    'PhoneNumber' => '0'.$msisdn,
+                    'transId' => $transId,
+                    'operator' => $circle,
+                    'reason' => $result
+                ],
+                [
+                    'transId' => $transId,
+                    'mpesaReceipt' => $MpesaReceiptNumber
+            ]);
 
             if (curl_errno($ch))
             {
@@ -237,9 +251,10 @@ class C2BController extends BuyAirtimeController
 
     public function operator($circle)
     {
-        $airtel =array(730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,783,784,785,786,787,788,789,100,101,102);
+        $airtel =array(10,730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,783,784,785,786,787,788,789,100,101,102);
 
-        $safcom =array(701,702,703,704,705,706,707,708,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,746,748,790,791,792,793,794,795,796,797,798,799,110,111);
+        //$safcom =array(701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,745,746,748,790,791,792,793,794,795,796,797,798,799,110,111);
+		$safcom =array(701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,745,746,748,757,758,759,768,769,790,791,792,793,794,795,796,797,798,799,110,111);//added more prefixes
 
         $telkom =array(770,771,772,773,774,775,776,777,778,779);
 

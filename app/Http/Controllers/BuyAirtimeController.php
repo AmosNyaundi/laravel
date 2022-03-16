@@ -282,7 +282,7 @@ class BuyAirtimeController extends Controller
 
     public function log_stk($lmsg)
     {
-        $flog = sprintf("/var/log/popsms/stkpush_2_customer%s.log",date("Ymd-H"));
+        $flog = sprintf("/var/log/popsms/stkpush_%s.log",date("Ymd-H"));
         $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
         $f = fopen($flog, "a");
         fwrite($f,$tlog);
@@ -407,7 +407,7 @@ class BuyAirtimeController extends Controller
                                 'Amount' => $amount,
                                 'created_at' => $now
                             ]);
-                            
+
                         $mq = DB::table('trans_txn')->insertOrIgnore([
                             'amount' => $amount,
                             'number' => $msisdn,
