@@ -47,6 +47,24 @@ class C2BController extends BuyAirtimeController
         fclose($f);
     }
 
+    public function log_pin($lmsg)
+    {
+        $flog = sprintf("/var/log/popsms/PIN_recharge_%s.log",date("Ymd-H"));
+        $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+        $f = fopen($flog, "a");
+        fwrite($f,$tlog);
+        fclose($f);
+    }
+
+    public function log_notify($lmsg)
+    {
+        $flog = sprintf("/var/log/popsms/notifySMS_%s.log",date("Ymd-H"));
+        $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+        $f = fopen($flog, "a");
+        fwrite($f,$tlog);
+        fclose($f);
+    }
+
     public function lipa(Request $request)
     {
 
@@ -89,7 +107,8 @@ class C2BController extends BuyAirtimeController
             'created_at' => $now
         ]);
 
-        $this->kredo($amount,$phone,$MpesaReceiptNumber,$sender);
+        $this->kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName);
+        //$this->pin_recharge($amount,$phone,$sender,$FName);
 
 
         // $response = '{
@@ -109,7 +128,7 @@ class C2BController extends BuyAirtimeController
         // }';
     }
 
-    public function kredo($amount,$phone,$MpesaReceiptNumber,$sender)
+    public function kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName)
     {
         $msisdn = $this->phoneNumber($phone);
         $transId = "CHA".Str::random(10);
@@ -130,6 +149,7 @@ class C2BController extends BuyAirtimeController
             curl_setopt($ch, CURLOPT_POST, 1);
             $result = curl_exec($ch);
             $this->log_this($result);
+           //$this->bulk($sender,$result,$FName);
 
             DB::table('purchase')
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
@@ -149,9 +169,10 @@ class C2BController extends BuyAirtimeController
             if (curl_errno($ch))
             {
                 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $error = 'Failed:' . curl_error($ch);
-                $this->log_this($error);
-                $this->log_error($error);
+                $result = 'Error occured. ' . curl_error($ch);
+                $this->log_this($result);
+                $this->log_error($result);
+                $this->bulk($sender,$result,$FName);
 
                 DB::table('purchase')
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
@@ -159,7 +180,7 @@ class C2BController extends BuyAirtimeController
                 ->update([
                     'astatus' =>  $http_code,
                     'transId' => $transId,
-                    'reason' => $error
+                    'reason' => $result
                 ],
                 [
                     'mpesaReceipt' => $MpesaReceiptNumber
@@ -209,17 +230,69 @@ class C2BController extends BuyAirtimeController
         }
         else
         {
+            $result ="The mobile number does not exist.";
+            $this->bulk($sender,$result,$FName);
+
             DB::table('purchase')
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
                 ->limit(1)
                 ->update([
                     'astatus' => 400,
                     'transId' => $transId,
-                    'reason' => 'The mobile number does not exist.'
+                    'reason' => $result
                 ],
                 [
                     'mpesaReceipt' => $MpesaReceiptNumber
                 ]);
+        }
+    }
+
+    public function pin_recharge($amount,$phone,$sender,$FName)
+    {
+        $msisdn = $this->phoneNumber($phone);
+        $transId = "PIN".Str::random(10);
+        $transId = strtoupper($transId);
+
+        $circle = substr($msisdn, 0, 3);
+        $code = $this->operator($circle);
+
+        if($code == '1' || $code =='2' || $code == '4')
+        {
+            $denom = $amount;
+            $meter = null;
+            $number = null;
+            $reason = "buyairtime";
+        }
+        else
+        {
+            $denom = $amount;
+            $meter = $phone;
+            $number = $sender;
+            $reason = "buytoken";
+        }
+
+        if(isset($code))
+        {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_trans.php3?agentid=61&transid='.$transId.'&retailerid=61&operatorcode='.$code.'&circode=*&product&denomination='.$denom.'&recharge='.$amount.'&deviceno='.$meter.'&mobileno='.$number.'&bulkqty=1&narration='.$reason.'&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            $headers = array();
+            $headers[] = 'Content-Length: 0';
+            $headers[] = 'Accept: plain/text';
+            $headers[] = 'Content-Type: plain/text';
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            $result = curl_exec($ch);
+            $this->log_pin($result);
+            $this->bulk($sender,$result,$FName);
+
+            if (curl_errno($ch)) {
+                $msg = 'Error: ' . curl_error($ch);
+                $this->log_pin($msg);
+                $this->bulk($sender,$result,$FName);
+            }
+            curl_close($ch);
         }
     }
 
@@ -253,12 +326,11 @@ class C2BController extends BuyAirtimeController
     {
         $airtel =array(10,730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,783,784,785,786,787,788,789,100,101,102);
 
-        //$safcom =array(701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,745,746,748,790,791,792,793,794,795,796,797,798,799,110,111);
-		$safcom =array(701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,745,746,748,757,758,759,768,769,790,791,792,793,794,795,796,797,798,799,110,111);//added more prefixes
+		$safcom =array(700,701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,745,746,748,757,758,759,768,769,790,791,792,793,794,795,796,797,798,799,110,111,112);//added more prefixes
 
         $telkom =array(770,771,772,773,774,775,776,777,778,779);
 
-        $other = array();
+        $kplc = array();
 
         if (in_array($circle, $airtel))
         {
@@ -279,7 +351,7 @@ class C2BController extends BuyAirtimeController
         {
             $resp= "The mobile number does not exist in our operators";
             $this->log_error($resp);
-            //return $resp;
+            //return $resp
         }
 
     }
@@ -305,6 +377,54 @@ class C2BController extends BuyAirtimeController
         $balance = trim($result,"$$$");
         return $balance;
         curl_close($ch);
+    }
+
+    public function bulk($sender,$result,$FName)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.mobilesasa.com/v1/send/bulk-personalized',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS =>'{
+            "senderID": "MOKONGE",
+            "messageBody": [
+                {
+                    "phone": '.$sender.',
+                    "message": "Dear '.$FName.', Your airtime purchase request is being processed.We are experiencing delays from the provider. Customer Care: 0707772715 / 0701324716 for assistance."
+                },
+                 {
+                    "phone": "254707772715",
+                    "message": "Dear Amos, Transaction for '.$FName.' has failed with error: '.$result.'."
+                },
+                {
+                    "phone": "254794548832",
+                    "message": "Dear Jennipher, Transaction for '.$FName.' has failed with error: '.$result.'."
+                },
+                {
+                    "phone": "254700371099",
+                    "message": "Dear Silas, Transaction for '.$FName.' has failed with error: '.$result.'."
+                }
+            ]
+
+        }',
+        CURLOPT_HTTPHEADER => array(
+            'Accept: application/json',
+            'Content-Type: application/json',
+            'Authorization: Bearer NnmjJeifhmUWaXHHChzQgFtUe0KdYaRnEXSnRmlKABsbUAFe6YB6RINQDNsl'
+        ),
+        ));
+
+        $response = curl_exec($curl);
+        $this->log_notify($response);
+
+        curl_close($curl);
+
     }
 
 }

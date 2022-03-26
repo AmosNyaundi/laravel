@@ -43,8 +43,8 @@ class Dashboard extends Controller
                         ->sum('amount');
 
 
-            $airtime =  DB::table('air_txn')
-                        ->where(['responseStatus' => 200])
+            $airtime =  DB::table('purchase')
+                        ->where(['astatus' => 200])
                         ->select(
                             DB::raw('COUNT(*) as sum'),
                             DB::raw("DATE_FORMAT(created_at,'%M') as month")
@@ -52,8 +52,8 @@ class Dashboard extends Controller
                         ->groupBy('month')
                         ->get();
 
-            $txn =  DB::table('mpesa_txn')
-                        ->where(['ResultCode' => 0])
+            $txn =  DB::table('purchase')
+                        ->where(['astatus' => 200])
                         ->select(
                             DB::raw('sum(Amount) as sum'),
                             DB::raw("DATE_FORMAT(created_at,'%M') as month")

@@ -66,10 +66,10 @@
                                 Buy for Customer
                             </a>
                         </li>
-                        <li class="@yield('bal')">
-                            <a href="{{ route('balance')}}">
+                        <li class="@yield('reward')">
+                            <a href="{{ route('loyalty')}}">
                                 <i class="las la-level-up-alt"></i>
-                                Check Balance
+                                Customer Reward
                             </a>
                         </li>
 

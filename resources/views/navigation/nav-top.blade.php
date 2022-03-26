@@ -31,8 +31,8 @@
                     ->first();
             @endphp
 
-            <button type="button" class="btn mb-1 btn-danger"><marquee>Mpesa: KES {{ number_format($mpesa->Balance) }} ||
-                Airtime: KES {{ number_format($air->balance) }}</marquee>
+            <button type="button" class="btn mb-1 btn-danger">Mpesa: KES {{ number_format($mpesa->Balance) }} ||
+                Airtime: KES {{ number_format($air->balance) }}
             </button>
 
             <ul class="navbar-list">

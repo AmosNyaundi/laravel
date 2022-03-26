@@ -1,13 +1,19 @@
 <?php
 
-function log_this($lmsg)
- {
-        $flog = sprintf("recharge_%s.log",date("Ymd-H"));
-        $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
-        $f = fopen($flog, "a");
-        fwrite($f,$tlog);
-        fclose($f);
- }
+$string = "39133213700503961781";
+$myarray = str_split($string, 4);
+$token = implode("-", $myarray);
+
+echo $token;
+
+// function log_this($lmsg)
+//  {
+//         $flog = sprintf("recharge_%s.log",date("Ymd-H"));
+//         $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+//         $f = fopen($flog, "a");
+//         fwrite($f,$tlog);
+//         fclose($f);
+//  }
 
 //  $msisdn = "707772715";
 //  $amount = 10;
@@ -95,51 +101,48 @@ function recharge($amount,$msisdn,$service,$result)
 */
 
 
-   $url = 'https://157.230.92.224:4835/call.php';
+//    $url = 'https://157.230.92.224:4835/call.php';
 
 
-    $ch = curl_init($url);
+//     $ch = curl_init($url);
 
-    //$status="200";
-    $msisdn = "707772715";
-    $amount = 10;
-    $transId = rand(5,10);
-    $transId = strtoupper($transId);
+//     //$status="200";
+//     $msisdn = "707772715";
+//     $amount = 10;
+//     $transId = rand(5,10);
+//     $transId = strtoupper($transId);
 
-    $customHeaders = array(
-        'Content-Type: application/json');
-    $request= '{
-        "msisdn":"'.$msisdn.'",
-        "transId":"'.$transId.'",
-        "amount":"'.$amount.'"
-   }';
+//     $customHeaders = array(
+//         'Content-Type: application/json');
+//     $request= '{
+//         "msisdn":"'.$msisdn.'",
+//         "transId":"'.$transId.'",
+//         "amount":"'.$amount.'"
+//    }';
 
-    curl_setopt($ch, CURLOPT_POST,1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $customHeaders);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    $result = curl_exec($ch);
-    echo $result;
-    if(curl_errno($ch))
-    {
-        echo 'Request Error:' . curl_error($ch);
-    }
-    else
-    {
-       $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        echo $result;
-   }
-
-
+//     curl_setopt($ch, CURLOPT_POST,1);
+//     curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
+//     curl_setopt($ch, CURLOPT_HTTPHEADER, $customHeaders);
+//     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+//     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+//     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+//     $result = curl_exec($ch);
+//     echo $result;
+//     if(curl_errno($ch))
+//     {
+//         echo 'Request Error:' . curl_error($ch);
+//     }
+//     else
+//     {
+//        $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//         echo $result;
+//    }
 
 
-   <?php
 
-$data=file_get_contents('php://input');
+// $data=file_get_contents('php://input');
 
-$request = json_decode($data);
+// $request = json_decode($data);
 
 /*
 $msisdn = $request->msisdn;
@@ -182,18 +185,18 @@ function recharge($amount,$msisdn,$transId)
       curl_close($ch);
 }
 */
-function log_flow($lmsg)
-{
-      $flog = sprintf("/var/log/popsms/KimTai_%s.log",date("Ymd-H"));
-      $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
-      $f = fopen($flog, "a");
-      fwrite($f,$tlog);
-      fclose($f);
-}
+// function log_flow($lmsg)
+// {
+//       $flog = sprintf("/var/log/popsms/KimTai_%s.log",date("Ymd-H"));
+//       $tlog = sprintf("\n%s%s",date("Y-m-d H:i:s T: ") , $lmsg);
+//       $f = fopen($flog, "a");
+//       fwrite($f,$tlog);
+//       fclose($f);
+// }
 
-//echo recharge($amount,$msisdn,$transId);
+// //echo recharge($amount,$msisdn,$transId);
 
-echo log_flow("RESP:".$data);
+// echo log_flow("RESP:".$data);
 
 // if ($_SERVER['REQUEST_METHOD'] == 'POST')
 // {
