@@ -44,6 +44,7 @@ Route::get('txn', [TxnController::class, 'txn'])->name('all');
 
 // CUSTOMER REWARD
 Route::get('loyalty', [LoyaltyControler::class, 'index'])->name('loyalty');
+Route::get('reward', [LoyaltyControler::class, 'bonus'])->name('reward');
 
 //AIRTIME TRANSACTIONS
 Route::get('airtime', [AirTxnController::class, 'index'])->name('airtime_txn');

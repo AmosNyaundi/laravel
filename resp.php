@@ -1,10 +1,14 @@
 <?php
 
-$string = "39133213700503961781";
-$myarray = str_split($string, 4);
-$token = implode("-", $myarray);
+// $string = "39133213700503961781";
+// $myarray = str_split($string, 4);
+// $token = implode("-", $myarray);
 
-echo $token;
+// echo $token;
+
+
+$value = "Innocent Nyerere Bosire";
+echo strtok($value, " "); // Test
 
 // function log_this($lmsg)
 //  {

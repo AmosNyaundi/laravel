@@ -28,18 +28,18 @@
                             <div class="iq-header-title">
                                 <h4 class="card-title">Customer Reward</h4>
                             </div>
-
+                            {{-- <a href="{{ route('reward')}}" class="btn btn-info">Reward</a> --}}
                         </div>
                         <div class="iq-card-body">
                             <div class="table-responsive">
                                 <table class="table mb-0  display table table-responsive-sm table-bordered table-sm" id="dataTable">
                                     <thead>
                                     <tr>
-                                        {{-- <th scope="col">Name</th> --}}
+                                        <th scope="col">Name</th>
                                         <th scope="col">Phone Number</th>
                                         <th scope="col">Total Airtime Purchased</th>
                                         <th scope="col">Bonus</th>
-                                        <th scope="col">Action</th>
+                                        <th scope="col">Status</th>
 
                                     </tr>
                                     </thead>
@@ -47,10 +47,18 @@
 
                                         @foreach($table as $key => $data)
                                             <tr>
-                                                {{-- <td>{{$data->msisdn}}</td>
-                                                <td>{{number_format($data->total)}}</td>
-                                                <td>{{$data->total*0.02}}</td>
-                                                <td> <div class="badge badge-pill badge-success">Reward</div></td> --}}
+                                                <td>{{$data->fname}}</td>
+                                                <td>{{$data->phone}}</td>
+                                                <td>{{number_format($data->amount)}}</td>
+                                                <td>{{number_format($data->bonus)}}</td>
+                                                <td>
+                                                    @if($data->status == '0')
+                                                    <div class="badge badge-pill badge-success">Rewarded</div>
+                                                    @elseif ($data->status !='0')
+                                                    <div class="badge badge-pill badge-warning">Pending</div>
+                                                    @endif
+                                                    {{-- <div class="badge badge-pill badge-warning">{{$data->status}}</div> --}}
+                                                </td>
                                             </tr>
                                         @endforeach
 

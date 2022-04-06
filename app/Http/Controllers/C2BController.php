@@ -130,7 +130,7 @@ class C2BController extends BuyAirtimeController
 
     public function kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName)
     {
-        $msisdn = $this->phoneNumber($phone);
+        $msisdn =substr($phone, -9);
         $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
 
@@ -149,7 +149,7 @@ class C2BController extends BuyAirtimeController
             curl_setopt($ch, CURLOPT_POST, 1);
             $result = curl_exec($ch);
             $this->log_this($result);
-           //$this->bulk($sender,$result,$FName);
+            $this->bulk($sender,$result,$FName);
 
             DB::table('purchase')
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
@@ -197,7 +197,7 @@ class C2BController extends BuyAirtimeController
                 $responsemessage = trim($data[4],"[SUCCESS:200] ");
                 $status = trim($data[5],"$$$");
                 ///curl_close($ch);
-
+                //$this->bulk($sender,$result,$FName);
                 //$this->log_this($result);
                 $balance = $this->pin_bal();
 
@@ -309,12 +309,12 @@ class C2BController extends BuyAirtimeController
 
         $data = json_encode($request->all());
         $this->log_stk($data);
-
     }
 
     public function phoneNumber($phone)
     {
         $justNums = preg_replace("/[^0-9]/", '', $phone);
+        //$msisdn =substr( $pr->phone, -9);
 
             $justNums = preg_replace("/^0/", '',$justNums);
 
@@ -328,7 +328,7 @@ class C2BController extends BuyAirtimeController
 
 		$safcom =array(700,701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,745,746,748,757,758,759,768,769,790,791,792,793,794,795,796,797,798,799,110,111,112);//added more prefixes
 
-        $telkom =array(770,771,772,773,774,775,776,777,778,779);
+        $telkom =array(208,770,771,772,773,774,775,776,777,778,779);
 
         $kplc = array();
 
@@ -392,23 +392,19 @@ class C2BController extends BuyAirtimeController
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS =>'{
-            "senderID": "MOKONGE",
+            "senderID": "EAZYTOPUP",
             "messageBody": [
-                {
-                    "phone": '.$sender.',
-                    "message": "Dear '.$FName.', Your airtime purchase request is being processed.We are experiencing delays from the provider. Customer Care: 0707772715 / 0701324716 for assistance."
-                },
                  {
-                    "phone": "254707772715",
-                    "message": "Dear Amos, Transaction for '.$FName.' has failed with error: '.$result.'."
-                },
+                     "phone": '.$sender.',
+                     "message": "Dear '.$FName.', Your airtime purchase request is being processed. Customer Care: 0707772715 / 0701324716 for assistance."
+                 },
                 {
                     "phone": "254794548832",
-                    "message": "Dear Jennipher, Transaction for '.$FName.' has failed with error: '.$result.'."
+                    "message": "Dear Jennipher, Transaction for '.$FName.' has: '.$result.'."
                 },
                 {
-                    "phone": "254700371099",
-                    "message": "Dear Silas, Transaction for '.$FName.' has failed with error: '.$result.'."
+                    "phone": "254707772715",
+                    "message": "Dear Jennipher, Transaction for '.$FName.' has: '.$result.'."
                 }
             ]
 

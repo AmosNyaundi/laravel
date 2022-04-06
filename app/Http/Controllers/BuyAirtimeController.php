@@ -536,6 +536,7 @@ class BuyAirtimeController extends Controller
         $req = json_decode($data);
 
         $ResultCode=$req->Body->stkCallback->ResultCode;
+        $now = Carbon::now();
 
         if($ResultCode == '0')
         {
@@ -551,7 +552,7 @@ class BuyAirtimeController extends Controller
 
 
             $resp = "Merchant_req: ".$MerchantRequestID. " |Amount: ".$amount." MpesaReceiptNumber: ".$MpesaReceiptNumber." TransactionDate: ".$TransactionDate." PhoneNumber: ".$PhoneNumber;
-            DB::table('mpesa_txn')
+            DB::table('mpesa_stk')
                     ->where('MerchantRequestID', $MerchantRequestID)
                     ->limit(1)
                     ->update([
@@ -574,13 +575,14 @@ class BuyAirtimeController extends Controller
                 'mpesaReceipt' => $MpesaReceiptNumber,
                 'amount' => $amount,
                 'mstatus'=> $ResultCode,
-                'msisdn' => $PhoneNumber
+                'msisdn' => $PhoneNumber,
+                'created_at' => $now
             ]);
 
 
             $user = DB::table('trans_txn')->where('number', $PhoneNumber)->latest()->first();
 
-            $phone = $user->msisdn;
+            //$phone = $user->msisdn;
             //$phone = $PhoneNumber;
 
             //$this->airtime($amount,$phone,$MpesaReceiptNumber);
@@ -593,7 +595,7 @@ class BuyAirtimeController extends Controller
             $CheckoutRequestID = $req->Body->stkCallback->CheckoutRequestID;
             $ResultDesc = $req->Body->stkCallback->ResultDesc;
 
-            DB::table('mpesa_txn')
+            DB::table('mpesa_stk')
                     ->where('MerchantRequestID', $MerchantRequestID)
                     ->limit(1)
                     ->update([
@@ -742,53 +744,6 @@ class BuyAirtimeController extends Controller
 
     }*/
 
-    public function airtime($amount,$phone,$MpesaReceiptNumber)
-    {
-        $msisdn = $this->phoneNumber($phone);
-        $transId = "CHA".Str::random(10);
-        $transId = strtoupper($transId);
-
-        $ch = curl_init();
-        $headers = array();
-        $headers[] = 'Content-Length: 0';
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-
-        $result = curl_exec($ch);
-        if (curl_errno($ch)) {
-            $error = 'Request Failed:' . curl_error($ch);
-            $this->log_this($error);
-        }
-        $http_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        $this->log_this($result);
-
-        DB::table('purchase')
-            ->where('mpesaReceipt', $MpesaReceiptNumber)
-            ->limit(1)
-            ->update([
-                'astatus' => $http_code,
-                'PhoneNumber' => $msisdn,
-                'transId' => $transId
-            ],
-            [
-                'transId' => $transId,
-                'mpesaReceipt' => $MpesaReceiptNumber
-            ]);
-
-            DB::table('air_txn')->insert([
-                'responseId' => "NA",
-                'responseStatus' => $http_code,
-                'responseDesc' => "Success",
-                'receiverMsisdn' => $msisdn,
-                'amount' => $amount,
-                'transId' => $transId
-            ]);
-    }
-
     public function self(Request $request)
     {
 
@@ -812,7 +767,7 @@ class BuyAirtimeController extends Controller
             $resp = json_encode($resp);
             echo $resp;
 
-            $this->webStkpush($number,$pesa);
+            //$this->webStkpush($number,$pesa);
         }
 
     }
@@ -840,7 +795,7 @@ class BuyAirtimeController extends Controller
             );
             $resp = json_encode($resp);
             echo $resp;
-            $this->webStkpush($number,$pesa);
+            //$this->webStkpush($number,$pesa);
         }
 
 
@@ -855,10 +810,10 @@ class BuyAirtimeController extends Controller
       );
 
         $rt = json_encode($request);
-
         $dat = json_decode($rt);
         $number=$dat->number;
         $pesa=$dat->pesa;
+        $msisdn= $number;
 
         $mq = DB::table('trans_txn')->insertOrIgnore([
                 'amount' => $pesa,
@@ -869,11 +824,9 @@ class BuyAirtimeController extends Controller
 
         if($mq)
         {
-            $this->webStkpush($number,$pesa);
-            //$this->stkpush($dat);
+            $this->webStkpush($number,$pesa,$msisdn);
         }
 
-        $this->log_web($rt);
     }
 
     public function webOther(Request $request)
@@ -886,7 +839,6 @@ class BuyAirtimeController extends Controller
       );
 
         $rt = json_encode($request);
-
         $dat = json_decode($rt);
         $number=$dat->number;
         $pesa=$dat->pesa;
@@ -901,18 +853,16 @@ class BuyAirtimeController extends Controller
 
         if($mq)
         {
-            $this->webStkpush($number,$pesa);
-            //$this->stkpush($dat);
+            $this->webStkpush($number,$pesa,$msisdn);
         }
 
         $this->log_web($rt);
     }
 
-    public function webStkpush($number,$pesa)
+    public function webStkpush($number,$pesa,$msisdn)
     {
         $now = Carbon::now();
-
-        $msisdn = $this->Number($number);
+        $number =substr($number, -9);
         $amount = $pesa;
 
         $savedToken = DB::table('mpesa_token')
@@ -934,7 +884,7 @@ class BuyAirtimeController extends Controller
             $token = $this->FreshOne();
         }
 
-        $test = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
+        //$test = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
         $prod ='https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
         //$auth = Token();
@@ -943,12 +893,12 @@ class BuyAirtimeController extends Controller
 
             $accessToken = "Bearer ".$token;
             $service ="Airtime";
-            $shortcode ='174379';
-            $passkey ='bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+            $shortcode ='4040333';
+            $passkey ='d8b8c1b611dee821331f03361047e099475783874a24d426433c7528b951d6ca';
             $timestamp = date('YmdHis');
             $password = base64_encode($shortcode.$passkey.$timestamp);
 
-            $ch = curl_init($test);
+            $ch = curl_init($prod);
             curl_setopt($ch,  CURLOPT_HTTPHEADER,
                 ['Authorization: '.$accessToken,
                 'Content-Type: application/json'
@@ -961,11 +911,11 @@ class BuyAirtimeController extends Controller
                 'Timestamp' =>$timestamp,
                 'TransactionType' => 'CustomerPayBillOnline',
                 'Amount' => (int)$amount,
-                'PartyA' => $msisdn,
+                'PartyA' => $number,
                 'PartyB' => $shortcode,
-                'PhoneNumber' => '254'.$msisdn,
+                'PhoneNumber' => '254'.$number,
                 'CallBackURL' => 'https://164.90.133.19:4040/api/resp/stk',
-                'AccountReference' => 'EasyTopup',
+                'AccountReference' => $msisdn,
                 'TransactionDesc' => $service
             );
 
@@ -1005,7 +955,7 @@ class BuyAirtimeController extends Controller
                         $status = 1;
                     }
 
-                     $resp = DB::table('mpesa_txn')->insert([
+                     $resp = DB::table('mpesa_stk')->insert([
                             'MerchantRequestID' => $MerchantRequestID,
                             'CheckoutRequestID' => $CheckoutRequestID,
                             'ResponseCode'=> $ResponseCode,
