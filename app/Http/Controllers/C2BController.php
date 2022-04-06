@@ -404,7 +404,7 @@ class C2BController extends BuyAirtimeController
                 },
                 {
                     "phone": "254707772715",
-                    "message": "Dear Jennipher, Transaction for '.$FName.' has: '.$result.'."
+                    "message": "Dear Amos, Transaction for '.$FName.' has: '.$result.'."
                 }
             ]
 
