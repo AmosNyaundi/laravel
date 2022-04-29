@@ -35,6 +35,7 @@ class LoyaltyControler extends Controller
         {
             $user = auth()->user()->username;
             $date = Carbon::now()->subDays(7);
+           // DB::table('loyalty')->truncate();
             $detail = DB::table('purchase')
                     ->join('mpesa_txn', 'mpesa_txn.MpesaReceiptNumber', '=', 'purchase.mpesaReceipt')
                     ->select('msisdn')
@@ -43,7 +44,7 @@ class LoyaltyControler extends Controller
                     //->where('purchase.created_at', '>=', $date)
                     ->groupBy("msisdn")
                     ->orderBy('total', 'desc')
-                    ->having('total', '>', 100)
+                    ->having('total', '>', 10)
                     ->get();
 
             // foreach ($detail as $pr)
@@ -59,6 +60,7 @@ class LoyaltyControler extends Controller
             //                 ['fname' => $name, 'phone' => $phone, 'amount' => $amount, 'bonus' => $bonus, 'status' => '1', 'initiator' => 'amos']
             //             );
             // }
+
             $loyalty = DB::table('loyalty')
                     ->get();
 
@@ -74,9 +76,13 @@ class LoyaltyControler extends Controller
         $now = Carbon::now();
 
         $loyalty = DB::table('loyalty')
-                    ->where(['status' => '1'])
-                    ->where('bonus', '>', 5)
+                    ->where(['status' => '0'])
+                    ->where('bonus', '>=', 5)
+                    ->limit(30)
+                    //->count()
                     ->get();
+        $count = count($loyalty);
+
         foreach ($loyalty as $key => $pr)
         {
             $transId = "CHA".Str::random(10);
@@ -85,54 +91,71 @@ class LoyaltyControler extends Controller
             $FName = strtok($pr->fname, " ");
             $amount = $pr->bonus;
 
+            if($count <= 30)
+            {
+                $this->notify($msisdn,$FName,$amount);
+            }
 
-        $ch = curl_init();
-        $headers = array();
-        $headers[] = 'Content-Length: 0';
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        $result = curl_exec($ch);
-        $this->log_this($result);
 
-        $data = explode("%$", $result);
-        $merchanttransid = $data[0];
-        $pktransid =$data[1];
-        $transdatetime = $data[2];
-        $res = explode(".", $data[3]);
-        $responsecode = $res[1];
-        $responsemessage = trim($data[4],"[SUCCESS:200] ");
-        $status = trim($data[5],"$$$");
-        curl_close($ch);
+           /* if($count <= 30)
+            {
+                $ch = curl_init();
+                $headers = array();
+                $headers[] = 'Content-Length: 0';
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+                curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_etrans.php3?agentid=61&transid='.$transId.'&retailerid=15&operatorcode=4&circode=*&product&denomination=0&recharge='.$amount.'&mobileno='.$msisdn.'&bulkqty=1&narration=buy%20airtime&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_POST, 1);
+                $result = curl_exec($ch);
+                $this->log_this($result);
 
-        $this->log_this($result);
-       ///$balance = $this->pin_bal();
+                $data = explode("%$", $result);
+                $merchanttransid = $data[0];
+                $pktransid =$data[1];
+                $transdatetime = $data[2];
+                $res = explode(".", $data[3]);
+                $responsecode = $res[1];
+                $responsemessage = trim($data[4],"[SUCCESS:200] ");
+                $status = trim($data[5],"$$$");
+                curl_close($ch);
 
-        DB::table('purchase')->insertOrIgnore([
-            'mpesaReceipt' => 'LOYALTY',
-            'amount' => $amount,
-            'mstatus'=> 0,
-            'astatus' =>  $responsecode,
-            'PhoneNumber' => '0'.$msisdn,
-            'transId' => $merchanttransid,
-            'msisdn' => 'EAZYTOPUP',
-            'reason' => $result,
-            'created_at' => $now,
-            'updated_at' => $now
-        ]);
+                $this->log_this($result);
 
-        $this->notify($msisdn,$amount,$FName);
-    }
+                DB::table('purchase')->insert([
+                    'mpesaReceipt' => 'LOYALTY',
+                    'amount' => $amount,
+                    'mstatus'=> 0,
+                    'astatus' =>  $responsecode,
+                    'PhoneNumber' => '0'.$msisdn,
+                    'transId' => $merchanttransid,
+                    'msisdn' => 'EAZYTOPUP',
+                    'reason' => $result,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ]);
+
+                $mql = DB::table('loyalty')
+                        ->where(['phone' => $pr->phone])
+                        ->update(['status' => '0']);
+
+                $this->notify($msisdn,$FName,$amount);
+            }
+            else
+            {
+                exit();
+            }
+            */
+        }
+       // return redirect()->route('loyalty');
 
     }
 
     public function notify($msisdn,$FName,$amount)
     {
-        $sms = "Dear '.$FName.', Congratulations for buying airtime from us. You have been rewarded a bonus of '.$amount.'. Buy more to increase your limit.";
+        $sms = "Dear $FName, Congratulations for buying airtime from us through Paybill 4040333. You have been rewarded a bonus of $amount Buy more to increase your limit.";
         $curl = curl_init();
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://api.mobilesasa.com/v1/send/bulk-personalized',
+        CURLOPT_URL => 'https://api.mobilesasa.com/v1/send/message',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -142,7 +165,7 @@ class LoyaltyControler extends Controller
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS =>'{
             "senderID": "EAZYTOPUP",
-            "message": "Dear '.$FName.', Congratulations for buying airtime from us. You have been rewarded a bonus of '.$amount.'. Buy more to increase your limit.",
+            "message": "Dear '.$FName.', Congratulations for buying airtime from us through Paybill 4040333. You have been rewarded a bonus of '.$amount.'. Buy more to increase your limit.",
             "phone": "254'.$msisdn.'"
         }',
         CURLOPT_HTTPHEADER => array(
@@ -159,7 +182,7 @@ class LoyaltyControler extends Controller
 
         $mql = DB::table('loyalty')
                 ->where('phone', $msisdn)
-                ->update(['status' => 0, 'msg' => $sms]);
+                ->update(['msg' => $sms]);
     }
 
     /**

@@ -28,7 +28,7 @@
                             <div class="iq-header-title">
                                 <h4 class="card-title">Customer Reward</h4>
                             </div>
-                            {{-- <a href="{{ route('reward')}}" class="btn btn-info">Reward</a> --}}
+                            <a href="{{ route('reward')}}" class="btn btn-info">Reward</a>
                         </div>
                         <div class="iq-card-body">
                             <div class="table-responsive">

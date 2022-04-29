@@ -749,6 +749,7 @@ class BuyAirtimeController extends Controller
 
         $number=$request->number;
         $pesa=$request->pesa;
+        $msisdn= $number;
 
         $mq = DB::table('trans_txn')->insertOrIgnore([
                 'amount' => $pesa,
@@ -766,7 +767,7 @@ class BuyAirtimeController extends Controller
             );
             $resp = json_encode($resp);
             echo $resp;
-
+            $this->webStkpush($number,$pesa,$msisdn);
             //$this->webStkpush($number,$pesa);
         }
 
@@ -796,6 +797,7 @@ class BuyAirtimeController extends Controller
             $resp = json_encode($resp);
             echo $resp;
             //$this->webStkpush($number,$pesa);
+            $this->webStkpush($number,$pesa,$msisdn);
         }
 
 
