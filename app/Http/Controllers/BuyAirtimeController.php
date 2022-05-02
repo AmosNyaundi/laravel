@@ -397,7 +397,7 @@ class BuyAirtimeController extends Controller
                             $status = 1;
                         }
 
-                        $resp = DB::table('mpesa_txn')->insert([
+                        $resp = DB::table('mpesa_stk')->insert([
                                 'MerchantRequestID' => $MerchantRequestID,
                                 'CheckoutRequestID' => $CheckoutRequestID,
                                 'ResponseCode'=> $ResponseCode,
