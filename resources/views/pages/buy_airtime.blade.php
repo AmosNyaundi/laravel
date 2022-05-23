@@ -48,7 +48,7 @@
                              <input type="number" class="form-control" name="phone"  placeholder="Phone Number">
 
                              <div class="text-danger">
-                                 @error('amount')
+                                 @error('phone')
                                  {{ $message }}
                                  @enderror
                              </div>

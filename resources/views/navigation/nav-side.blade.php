@@ -52,6 +52,35 @@
                     </ul>
                 </li>
 
+                <li aria-expanded="true" class="@yield('retry')">
+                    <a href="#retry" class="iq-waves-effect" data-toggle="collapse" aria-expanded="false">
+                        <i class="ri-refresh-line iq-arrow-left"></i>
+                        <span>Retry Failed</span>
+                        <i class="ri-arrow-right-s-line iq-arrow-right"></i>
+                    </a>
+                    <ul id="retry" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
+                        <li class="@yield('api')">
+                            <a href="">
+                                <i class="las la-exclamation-circle"></i>
+                                API Failure (5 minutes delay)
+                            </a>
+                        </li>
+                        <li class="@yield('namba')">
+                            <a href="">
+                                <i class="las la-phone-slash"></i>
+                                Invalid Number
+                            </a>
+                        </li>
+                        <li class="@yield('mfail')">
+                            <a href="">
+                                <i class="las la-bell-slash"></i>
+                                Mpesa Failure
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
 
                 <li aria-expanded="true" class="@yield('kredo')">
                     <a href="#kredo" class="iq-waves-effect" data-toggle="collapse" aria-expanded="false">

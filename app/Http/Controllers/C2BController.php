@@ -130,7 +130,8 @@ class C2BController extends BuyAirtimeController
 
     public function kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName)
     {
-        $msisdn =substr($phone, -9);
+        $justNums = preg_replace('/\D+/', '', $phone);
+        $msisdn =substr($justNums, -9);
         $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
 
@@ -313,10 +314,13 @@ class C2BController extends BuyAirtimeController
 
     public function phoneNumber($phone)
     {
-        $justNums = preg_replace("/[^0-9]/", '', $phone);
+        //$justNums = preg_replace("/[^0-9]/", '', $phone);
+        $justNums = preg_replace('/\D+/', '', $phone);
+        $justNums =substr($justNums, -9);
+
         //$msisdn =substr( $pr->phone, -9);
 
-            $justNums = preg_replace("/^0/", '',$justNums);
+            //$justNums = preg_replace("/^0/", '',$justNums);
 
             return $justNums;
 
@@ -324,7 +328,7 @@ class C2BController extends BuyAirtimeController
 
     public function operator($circle)
     {
-        $airtel =array(10,730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,783,784,785,786,787,788,789,100,101,102);
+        $airtel =array(10,104,730,731,732,733,734,735,736,737,738,739,750,751,752,753,754,755,756,762,780,781,782,783,784,785,786,787,788,789,100,101,102);
 
 		$safcom =array(700,701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,726,727,728,729,740,741,742,743,745,746,748,757,758,759,768,769,790,791,792,793,794,795,796,797,798,799,110,111,112,115);//added more prefixes
 
@@ -394,14 +398,11 @@ class C2BController extends BuyAirtimeController
         CURLOPT_POSTFIELDS =>'{
             "senderID": "EAZYTOPUP",
             "messageBody": [
-                 {
-                     "phone": '.$sender.',
-                     "message": "Dear '.$FName.', Your airtime purchase request is being processed. Customer Care: 0707772715 / 0701324716 for assistance."
-                 },
                 {
-                    "phone": "254794548832",
-                    "message": "Dear Jennipher, Transaction for '.$FName.' has: '.$result.'."
+                    "phone": '.$sender.',
+                    "message": "Dear '.$FName.', Your airtime purchase request is being processed. Customer Care: 0707772715 / 0701324716 for assistance."
                 },
+
                 {
                     "phone": "254707772715",
                     "message": "Dear Amos, Transaction for '.$FName.' has: '.$result.'."

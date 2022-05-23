@@ -7,8 +7,13 @@
 // echo $token;
 
 
-$value = "Innocent Nyerere Bosire";
-echo strtok($value, " "); // Test
+// $value = "Innocent Nyerere Bosire";
+// echo strtok($value, " "); // Test
+
+$number = "+25472 2222222";
+$phone = preg_replace('/\D+/', '', $number);
+
+echo $phone;
 
 // function log_this($lmsg)
 //  {
