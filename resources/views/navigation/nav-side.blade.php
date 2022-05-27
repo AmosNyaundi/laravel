@@ -60,19 +60,19 @@
                     </a>
                     <ul id="retry" class="iq-submenu collapse" data-parent="#iq-sidebar-toggle">
                         <li class="@yield('api')">
-                            <a href="">
+                            <a href="{{ route('api_retry')}}">
                                 <i class="las la-exclamation-circle"></i>
                                 API Failure (5 minutes delay)
                             </a>
                         </li>
                         <li class="@yield('namba')">
-                            <a href="">
+                            <a href="{{ route('namba_retry')}}">
                                 <i class="las la-phone-slash"></i>
                                 Invalid Number
                             </a>
                         </li>
                         <li class="@yield('mfail')">
-                            <a href="">
+                            <a href="{{ route('m_retry')}}">
                                 <i class="las la-bell-slash"></i>
                                 Mpesa Failure
                             </a>

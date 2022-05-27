@@ -29,7 +29,7 @@ class BuyAirtimeController extends Controller
 
                 // ->chunk(100, function($rows){});
 
-            return view('pages.buy_airtime',['table' => $table]);
+            return view('pages.buy_airtime');
         }
         //$message = "Session timeout!";
         return redirect()->route('login');

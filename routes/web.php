@@ -9,6 +9,7 @@ use App\Http\Controllers\MpesaTxnController;
 use App\Http\Controllers\BuyAirtimeController;
 use App\Http\Controllers\TxnController;
 use App\Http\Controllers\LoyaltyControler;
+use App\Http\Controllers\RetryController;
 
 
 /*
@@ -57,4 +58,10 @@ Route::get('request', [SubscriptionController::class, 'show'])->name('submanage.
 Route::post('submanage', [SubscriptionController::class, 'submanage'])->name('submit.request');
 Route::get('que', [SubscriptionController::class, 'outbox'])->name('submanage.outbox');
 
-
+//RETRY
+Route::get('delay', [RetryController::class, 'api'])->name('api_retry');
+Route::post('api', [RetryController::class, 'api_retry'])->name('api');
+Route::get('namba', [RetryController::class, 'namba'])->name('namba_retry');
+Route::post('num', [RetryController::class, 'namba_retry'])->name('namba');
+Route::get('mfailure', [RetryController::class, 'mfailure'])->name('m_retry');
+Route::post('failure', [RetryController::class, 'm_retry'])->name('mfailure');
