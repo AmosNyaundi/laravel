@@ -78,26 +78,68 @@ class RetryController extends Controller
                     curl_setopt($ch, CURLOPT_POST, 1);
                     $result = curl_exec($ch);
                     $this->log_this($result);
+                    $balance = $this->pin_bal();
                     //$this->bulk($sender,$result,$FName);
 
-                    // DB::table('purchase')
-                    //     ->where('mpesaReceipt', $MpesaReceiptNumber)
-                    //     ->limit(1)
-                    //     ->update([
-                    //         'astatus' => 400,
-                    //         'PhoneNumber' => '0'.$msisdn,
-                    //         'transId' => $transId,
-                    //         'operator' => $circle,
-                    //         'reason' => $result
-                    //     ],
-                    //     [
-                    //         'transId' => $transId,
-                    //         'mpesaReceipt' => $MpesaReceiptNumber
-                    //     ]);
 
-                    //     $message = $result;
-                    //     $status = "danger";
-                    //     return redirect()->route('api_retry')->with(['message' => $message,'status' =>$status]);
+                    if (strpos($result, '#ERROR') !== false)
+                    {
+
+                        DB::table('purchase')
+                        ->where('mpesaReceipt', $MpesaReceiptNumber)
+                        ->limit(1)
+                        ->update([
+                            'astatus' => 400,
+                            'PhoneNumber' => '0'.$msisdn,
+                            'transId' => $transId,
+                            'operator' => $circle,
+                            'reason' => $result,
+                            'balance' => $balance
+                        ],
+                        [
+                            'transId' => $transId,
+                            'mpesaReceipt' => $MpesaReceiptNumber
+                        ]);
+
+                        $message = $result;
+                        $status = "danger";
+                        return redirect()->route('api_retry')->with(['message' => $message,'status' =>$status]);
+                    }
+                    else
+                    {
+                        $data = explode("%$", $result);
+                        $merchanttransid = $data[0];
+                        $pktransid =$data[1];
+                        $transdatetime = $data[2];
+                        $res = explode(".", $data[3]);
+                        $responsecode = $res[1];
+                        $responsemessage = trim($data[4],"[SUCCESS:200] ");
+                        $status = trim($data[5],"$$$");
+                        ///curl_close($ch);
+                        //$this->bulk($sender,$result,$FName);
+                        //$this->log_this($result);
+                        //$balance = $this->pin_bal();
+
+                        DB::table('purchase')
+                            ->where('mpesaReceipt', $MpesaReceiptNumber)
+                            ->limit(1)
+                            ->update([
+                                'astatus' =>  $responsecode,
+                                'PhoneNumber' => '0'.$msisdn,
+                                'transId' => $merchanttransid,
+                                'operator' => $circle,
+                                'reason' => $data,
+                                'balance' => $balance
+                            ],
+                            [
+                                'transId' => $transId,
+                                'mpesaReceipt' => $MpesaReceiptNumber
+                        ]);
+
+                        $message = $responsemessage;
+                        $status = "info";
+                        return redirect()->route('api_retry')->with(['message' => $message,'status' =>$status]);
+                    }
 
                     if (curl_errno($ch))
                     {
@@ -122,12 +164,14 @@ class RetryController extends Controller
                         $status = "danger";
                         return redirect()->route('api_retry')->with(['message' => $message,'status' =>$status]);
                     }
+
+                    /*
                     else
                     {
                         $data = explode("%$", $result);
                         $merchanttransid = $data[0];
-                        $pktransid =$data[1];
-                        $transdatetime = $data[2];
+                        //$pktransid =$data[1];
+                        //$transdatetime = $data[2];
                         $res = explode(".", $data[3]);
                         $responsecode = $res[1];
                         $responsemessage = trim($data[4],"[SUCCESS:200] ");
@@ -141,7 +185,7 @@ class RetryController extends Controller
                             ->where('mpesaReceipt', $MpesaReceiptNumber)
                             ->limit(1)
                             ->update([
-                                'astatus' =>  200,
+                                'astatus' =>  $responsecode,
                                 'PhoneNumber' => '0'.$msisdn,
                                 'transId' => $merchanttransid,
                                 'operator' => $circle,
@@ -153,20 +197,10 @@ class RetryController extends Controller
                                 'mpesaReceipt' => $MpesaReceiptNumber
                         ]);
 
-                        // DB::table('air_txn')->insert([
-                        //     'responseId' => $pktransid,
-                        //     'responseStatus' => $responsecode,
-                        //     'responseDesc' => $responsemessage,
-                        //     'receiverMsisdn' => '0'.$msisdn,
-                        //     'senderMsisdn' => $sender,
-                        //     'amount' => $amount,
-                        //     'transId' => $merchanttransid
-                        // ]);
-
                         $message = $responsemessage;
                         $status = "info";
                         return redirect()->route('api_retry')->with(['message' => $message,'status' =>$status]);
-                    }
+                    } */
 
                 }
 
@@ -174,7 +208,8 @@ class RetryController extends Controller
             else
             {
 
-                $message = "Invalid transaction code";
+                $message = "No such failed transaction found";
+                //$message = "Invalid transaction code";
                 $status = "danger";
                 return redirect()->route('api_retry')->with(['message' => $message,'status' =>$status]);
             }
