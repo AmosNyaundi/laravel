@@ -1,5 +1,85 @@
 <?php
 
+//$resp = mt_rand(1000,9999);
+
+$dat = "Ez#0707644931#muranga";
+$data = explode("#", $dat);
+
+$phone = substr($data[1], -9);;
+$region = $data[2];
+echo $phone."-".$region;
+
+//    $req = '{
+//     "requestId":"10185461720890381332",
+//     "requestTimeStamp":"20220612123924",
+//     "requestParam":{
+//        "data":[
+//           {
+//              "name":"LinkId",
+//              "value":"00160110185461720892252331"
+//           },
+//           {
+//              "name":"OfferCode",
+//              "value":"001016031225"
+//           },
+//           {
+//              "name":"RefernceId",
+//              "value":"10185461720890381332"
+//           },
+//           {
+//              "name":"ClientTransactionId",
+//              "value":"333259946"
+//           },
+//           {
+//              "name":"Language",
+//              "value":"1"
+//           },
+//           {
+//              "name":"Channel",
+//              "value":"1"
+//           },
+//           {
+//              "name":"Type",
+//              "value":"NOTIFY_LINKID"
+//           },
+//           {
+//              "name":"USER_DATA",
+//              "value":"Ez#0707644931#muranga"
+//           },
+//           {
+//              "name":"Msisdn",
+//              "value":"254799248518"
+//           }
+//        ]
+//     },
+//     "operation":"CP_NOTIFICATION"
+//  }';
+
+
+
+
+
+//     $data = json_decode($req, false);
+//     $requestId=$data->requestId;
+//     $requestTimeStamp=date_format(date_create($data->requestTimeStamp), 'Y-m-d H:i:s');
+//     $linkId=$data->requestParam->data[0]->value;
+//     $OfferCode=$data->requestParam->data[1]->value;
+//     $RefernceId=$data->requestParam->data[2]->value;
+//     $ClientTransactionId=$data->requestParam->data[3]->value;
+//     $Channel=$data->requestParam->data[5]->value;
+//     $Type=$data->requestParam->data[6]->value;
+//     $user_data=$data->requestParam->data[7]->value;
+//     $Msisdn=$data->requestParam->data[8]->value;
+//     $cr=explode(" ",$user_data);
+//     $cid=$cr[0];
+//     $shortcode = 20750;
+
+//     $resp="RESP| MS:".$Msisdn."|OFCODE:".$OfferCode."|USERDATA:".$user_data."|TYPE:".$Type."|SC:".$shortcode."|CTID".$ClientTransactionId."|REQID:".$requestId."|RTIME:".$requestTimeStamp."|RfID:".$RefernceId;
+    //$misql=sprintf("INSERT INTO ondemand(criteria,message,msisdn,shortcode,offercode,keyword,linkid,requestid,clientTransactionId,referenceId,spid,requestTimeStamp) values('%s','%s','%s','%s','%s','%s','%s','%s','%s',NOW(),'%s','%s','%s','%s','%s','%s')",$criteria,$user_data,$Msisdn,$shortcode,$OfferCode,$keyword,$linkId,$requestId,$ClientTransactionId,$RefernceId,$cpid,$requestTimeStamp);
+    //$res=mysqli_query($connection,$misql);
+
+
+
 // $string = "39133213700503961781";
 // $myarray = str_split($string, 4);
 // $token = implode("-", $myarray);
@@ -10,8 +90,8 @@
 // $value = "Innocent Nyerere Bosire";
 // echo strtok($value, " "); // Test
 
-$number = "+25472 2222222";
-$phone = preg_replace('/\D+/', '', $number);
+// $number = "+25472 2222222";
+// $phone = preg_replace('/\D+/', '', $number);
 
 //echo $phone;
 

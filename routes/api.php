@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BuyAirtimeController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\C2BController;
+use App\Http\Controllers\AgentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,9 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::post('ondemand/callback', [AgentsController::class, 'callback']);
+Route::post('ondemand/delivery', [AgentsController::class, 'delivery']);
+
 Route::post('resp/stk', [BuyAirtimeController::class, 'callback']);
 Route::post('resp/c2b', [C2BController::class, 'lipa']);
 Route::post('reversal', [C2BController::class, 'reversal']);
@@ -33,3 +37,4 @@ Route::post('app/other', [BuyAirtimeController::class, 'other']);
 Route::post('web/self', [BuyAirtimeController::class, 'webSelf']);
 Route::post('web/other', [BuyAirtimeController::class, 'webOther']);
 Route::post('feedback', [FeedbackController::class, 'index']);
+
