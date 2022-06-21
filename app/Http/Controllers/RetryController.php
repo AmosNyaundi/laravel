@@ -59,6 +59,12 @@ class RetryController extends Controller
 
                 $justNums = preg_replace('/\D+/', '', $phone->PhoneNumber);
                 $msisdn =substr($justNums, -9);
+                // $cus = "254".$msisdn;
+                // $agent = DB::table('nominated')
+                //             ->where('phone', $cus)
+                //             ->first();
+                // $agent_id = $agent->agent_id;
+
                 $transId = "CHA".Str::random(10);
                 $transId = strtoupper($transId);
                 $amount = $air->amount;
@@ -242,6 +248,12 @@ class RetryController extends Controller
                 $air = DB::table('purchase')->where('mpesaReceipt', $MpesaReceiptNumber)->first();
                 $justNums = preg_replace('/\D+/', '', $phone);
                 $msisdn =substr($justNums, -9);
+                // $cus = "254".$msisdn;
+                // $agent = DB::table('nominated')
+                //             ->where('phone', $cus)
+                //             ->first();
+                // $agent_id = $agent->agent_id;
+
                 $transId = "CHA".Str::random(10);
                 $transId = strtoupper($transId);
                 $amount = $air->amount;
@@ -284,7 +296,7 @@ class RetryController extends Controller
 
                         $message = $result;
                         $status = "danger";
-                        return redirect()->route('number_retry')->with(['message' => $message,'status' =>$status]);
+                        return redirect()->route('namba_retry')->with(['message' => $message,'status' =>$status]);
                     }
                     else
                     {
@@ -319,7 +331,7 @@ class RetryController extends Controller
 
                         $message = $responsemessage;
                         $status = "info";
-                        return redirect()->route('number_retry')->with(['message' => $message,'status' =>$status]);
+                        return redirect()->route('namba_retry')->with(['message' => $message,'status' =>$status]);
                     }
 
                     if (curl_errno($ch))
@@ -343,7 +355,7 @@ class RetryController extends Controller
 
                         $message = $result;
                         $status = "info";
-                        return redirect()->route('number_retry')->with(['message' => $message,'status' =>$status]);
+                        return redirect()->route('namba_retry')->with(['message' => $message,'status' =>$status]);
                     }
 
                 }

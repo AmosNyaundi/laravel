@@ -52,55 +52,176 @@ class AgentsController extends Controller
         $Msisdn=$request->requestParam->data[8]->value;
         $data=explode("#",$user_data);
         //$cid=$cr[0];
-        $phone = $data[1];
-        $region = $data[2];
         $shortcode = 20750;
         $now = Carbon::now();
+        $mwezi = $now->format('F');
 
-        $mq= DB::table('ondemand')
-            ->insert([
-                'msisdn' => $Msisdn,
-                'message' => $user_data,
-                'shortcode' => $shortcode,
-                'offercode' => $OfferCode,
-                'linkid' => $linkId,
-                'requestid' => $requestId,
-                'clientTransactionId' => $ClientTransactionId,
-                'referenceId' => $RefernceId,
-                'requestTimeStamp' => $requestTimeStamp,
-                'created_at' => $now
-            ]);
-
-        if($mq)
+        if (stripos($user_data, '#N') !== false)
         {
-            //$this->log_this("Successfully inserted into ondemand table");
-            $this->log_this($dat);
-        }
-        else{
-            $this->log_this("Failed to insert into ondemand table");
-            $this->log_this($dat);
-        }
+            DB::table('ondemand')
+                ->insert([
+                    'msisdn' => $Msisdn,
+                    'message' => $user_data,
+                    'shortcode' => $shortcode,
+                    'offercode' => $OfferCode,
+                    'linkid' => $linkId,
+                    'requestid' => $requestId,
+                    'clientTransactionId' => $ClientTransactionId,
+                    'referenceId' => $RefernceId,
+                    'requestTimeStamp' => $requestTimeStamp,
+                    'created_at' => $now
+                ]);
 
-        if(DB::table('agents')->where('phone', $phone)->exists())
-        {
-            $msg = "FAILED: The mobile number is already registered!";
-            $this->log_reg($msg);
-            $this->bulk($Msisdn,$msg);
-        }
-        elseif(DB::table('agents')->where('phone', $Msisdn)->exists())
-        {
-            $refer = DB::table('agents')
-                    ->where('phone', $Msisdn)
-                    ->first();
-            $ref = $refer->ref;
+            $customer = $data[2];
+            $justNums = preg_replace('/\D+/', '', $customer);
+            $cus = "254".substr($justNums, -9);
 
-            $this->registerAgent($phone,$region,$ref,$Msisdn);
-            $msg = "SUCCESS: You have nominated $phone as agent. Your agent ID is $ref";
-            $this->bulk($Msisdn,$msg);
+            if(DB::table('agents')->where('phone', $Msisdn)->exists())
+            {
+                if(DB::table('nominated')->where('msisdn', $cus)->exists())
+                {
+                    $msg = "FAILED: The mobile number is already nominated!";
+                    $this->log_reg($msg);
+                    $this->bulk($Msisdn,$msg);
+                }
+                elseif(DB::table('agents')->where('phone', $cus)->exists())
+                {
+                    $msg = "FAILED: The mobile number is already registered as agent!";
+                    $this->log_reg($msg);
+                    $this->bulk($Msisdn,$msg);
+                }
+                else
+                {
+                    $referr = DB::table('agents')
+                            ->where('phone', $Msisdn)
+                            ->first();
+                    $agent_id = $referr->uniqueId;
+
+                    DB::table('nominated')
+                    ->insert([
+                        'agent_id' => $agent_id,
+                        'msisdn' => $cus,
+                        'created_at' => $now
+                    ]);
+
+                    $this->log_reg("Nominated customer: ".$cus);
+                    $msg = "Congratulations! You have nominated $cus. Thank you.";
+                    $this->bulk($Msisdn,$msg);
+                    $msg ="Conveniently Buy airtime for Safaricom,Airtel or Telkom via MPESA PAYBLL 4040333 even if you have fuliza. Enter your mobile number as your account number";
+                    $Msisdn = $cus;
+                    $this->bulk($Msisdn,$msg);
+                }
+
+            }
+            else
+            {
+                $msg = "FAILED: You are not allowed to nominate customer(s). Call 0707772715 for assistance.";
+                $this->log_reg($msg);
+                $this->bulk($Msisdn,$msg);
+            }
+
+        }
+        elseif (stripos($user_data, '#R') !== false)
+        {
+            $mq= DB::table('ondemand')
+                ->insert([
+                    'msisdn' => $Msisdn,
+                    'message' => $user_data,
+                    'shortcode' => $shortcode,
+                    'offercode' => $OfferCode,
+                    'linkid' => $linkId,
+                    'requestid' => $requestId,
+                    'clientTransactionId' => $ClientTransactionId,
+                    'referenceId' => $RefernceId,
+                    'requestTimeStamp' => $requestTimeStamp,
+                    'created_at' => $now
+                ]);
+
+            if($mq)
+            {
+                //$this->log_this("Successfully inserted into ondemand table");
+                $this->log_this($dat);
+            }
+            else{
+                $this->log_this("Failed to insert into ondemand table");
+                $this->log_this($dat);
+            }
+
+            $ph = $data[2];
+            $region = $data[3];
+
+            $justNums = preg_replace('/\D+/', '', $ph);
+            $phone = "254".substr($justNums, -9);
+
+            if(DB::table('agents')->where('phone', $phone)->exists())
+            {
+                $msg = "FAILED: The mobile number is already registered!";
+                $this->log_reg($msg);
+                $this->bulk($Msisdn,$msg);
+            }
+            elseif(DB::table('agents')->where('phone', $Msisdn)->exists())
+            {
+                $refer = DB::table('agents')
+                        ->where('phone', $Msisdn)
+                        ->first();
+                $ref = $refer->uniqueId;
+
+                $this->registerAgent($phone,$region,$ref,$Msisdn);
+                $msg = "SUCCESS: You have registered $phone as an agent. Your agent ID is $ref";
+                $this->bulk($Msisdn,$msg);
+            }
+            else
+            {
+                $msg = "FAILED: You are not allowed to register agents. Call: 0707772715 for assistance.";
+                $this->log_reg($msg);
+                $this->bulk($Msisdn,$msg);
+            }
+        }
+        elseif (stripos($user_data, '#BAL') !== false)
+        {
+            DB::table('ondemand')
+                ->insert([
+                    'msisdn' => $Msisdn,
+                    'message' => $user_data,
+                    'shortcode' => $shortcode,
+                    'offercode' => $OfferCode,
+                    'linkid' => $linkId,
+                    'requestid' => $requestId,
+                    'clientTransactionId' => $ClientTransactionId,
+                    'referenceId' => $RefernceId,
+                    'requestTimeStamp' => $requestTimeStamp,
+                    'created_at' => $now
+                ]);
+
+            if(DB::table('agents')->where('phone', $Msisdn)->exists())
+            {
+                $agent = DB::table('agents')
+                            ->where('phone', $Msisdn)
+                            ->first();
+                $agent_id = $agent->uniqueId;
+
+                $com = DB::table('purchase')
+                            ->where('uniqueId', $agent_id)
+                            ->whereMonth('created_at', Carbon::now()->month)
+                            ->sum('amount');
+
+                $commission = number_format($com*0.04, 2);
+
+                $msg = "Your $mwezi commission is Ksh $commission. Sell more to earn more.";
+                $this->log_reg($msg);
+                $this->bulk($Msisdn,$msg);
+            }
+            else
+            {
+                $msg = "Sorry! You are not allowed to use the service.";
+                $this->log_reg($msg);
+                $this->bulk($Msisdn,$msg);
+                exit();
+            }
         }
         else
         {
-            $msg = "FAILED: You are not allowed to register agents. Call: 0707772715 for assistance.";
+            $msg = "FAILED: Invalid format. Call 0707772715 for assistance.";
             $this->log_reg($msg);
             $this->bulk($Msisdn,$msg);
         }
@@ -111,6 +232,7 @@ class AgentsController extends Controller
         $dat = json_encode($request->all());
         $request = json_decode($dat);
 
+        /*
         $requestId=$request->requestId;
         $requestTimeStamp=date_format(date_create($request->requestTimeStamp), 'Y-m-d H:i:s');
         $linkId=$request->requestParam->data[0]->value;
@@ -177,24 +299,23 @@ class AgentsController extends Controller
             $this->log_reg($msg);
             $this->bulk($Msisdn,$msg);
         }
+        */
 
     }
 
     public function registerAgent($phone,$region,$ref,$Msisdn)
     {
-        $justNums = preg_replace('/\D+/', '', $phone);
-        $msd =substr($justNums, -9);
         $agentId = mt_rand(1000,9999);
         DB::table('agents')
             ->insert([
                 'uniqueId' => $agentId,
                 'ref' => $ref,
-                'phone' => '254'.$msd,
+                'phone' => $phone,
                 'region' => ucfirst($region),
                 'status' => 0,
                 'name' => 'NA'
             ]);
-        //$Msisdn = $phone;
+
         $msg = "Congratulations! You have been nominated as an agent by $Msisdn. Your AgentID is: $agentId. Click here to login: https://agents.eazytopup.co.ke/";
         $Msisdn = $phone;
         $this->bulk($Msisdn,$msg);
@@ -233,6 +354,5 @@ class AgentsController extends Controller
         curl_close($curl);
 
     }
-
 
 }

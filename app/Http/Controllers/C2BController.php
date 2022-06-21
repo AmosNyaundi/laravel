@@ -132,9 +132,14 @@ class C2BController extends BuyAirtimeController
     {
         $justNums = preg_replace('/\D+/', '', $phone);
         $msisdn =substr($justNums, -9);
+        // $cus = "254".$msisdn;
+        // $agent = DB::table('nominated')
+        //             ->where('phone', $cus)
+        //             ->first();
+        // $agent_id = $agent->agent_id;
+
         $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
-
         $circle = substr($msisdn, 0, 3);
         $code = $this->operator($circle);
 
@@ -150,7 +155,7 @@ class C2BController extends BuyAirtimeController
             curl_setopt($ch, CURLOPT_POST, 1);
             $result = curl_exec($ch);
             $this->log_this($result);
-            $this->bulk($sender,$result,$FName);
+            //$this->bulk($sender,$result,$FName);
 
             DB::table('purchase')
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
