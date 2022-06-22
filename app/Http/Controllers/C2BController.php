@@ -132,12 +132,7 @@ class C2BController extends BuyAirtimeController
     {
         $justNums = preg_replace('/\D+/', '', $phone);
         $msisdn =substr($justNums, -9);
-        // $cus = "254".$msisdn;
-        // $agent = DB::table('nominated')
-        //             ->where('phone', $cus)
-        //             ->first();
-        // $agent_id = $agent->agent_id;
-
+        $cus = "254".$msisdn;
         $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
         $circle = substr($msisdn, 0, 3);
@@ -155,9 +150,11 @@ class C2BController extends BuyAirtimeController
             curl_setopt($ch, CURLOPT_POST, 1);
             $result = curl_exec($ch);
             $this->log_this($result);
-            //$this->bulk($sender,$result,$FName);
+            $balance = $this->pin_bal();
 
-            DB::table('purchase')
+            if (strpos($result, '#ERROR') !== false)
+            {
+                DB::table('purchase')
                 ->where('mpesaReceipt', $MpesaReceiptNumber)
                 ->limit(1)
                 ->update([
@@ -170,7 +167,107 @@ class C2BController extends BuyAirtimeController
                 [
                     'transId' => $transId,
                     'mpesaReceipt' => $MpesaReceiptNumber
-            ]);
+                ]);
+
+                $result="Transaction for $FName has failed!";
+                $this->bulk($sender,$result,$FName);
+            }
+            else
+            {
+                if(DB::table('nominated')->where('msisdn', $cus)->exists())
+                {
+                    $agent = DB::table('nominated')
+                                ->where('msisdn', $cus)
+                                ->first();
+                    $agent_id = $agent->agent_id;
+
+                    $num = DB::table('agents')
+                                ->where('uniqueId', $agent_id)
+                                ->first();
+                    $agent_num = $num->phone;
+
+                    $commission = $amount*0.04;
+
+                    $data = explode("%$", $result);
+                    $merchanttransid = $data[0];
+                    $pktransid =$data[1];
+                    $transdatetime = $data[2];
+                    $res = explode(".", $data[3]);
+                    $responsecode = $res[1];
+                    $responsemessage = trim($data[4],"[SUCCESS:200] ");
+                    $status = trim($data[5],"$$$");
+                    $msg="Your customer $cus has bought airtime of Ksh $amount. Your commission is Ksh $commission. Buy airtime to any network paybill 4040333 n earn commission.";
+                    $Msisdn= $agent_num;
+                    $this->single($Msisdn,$msg);
+
+                    DB::table('purchase')
+                        ->where('mpesaReceipt', $MpesaReceiptNumber)
+                        ->limit(1)
+                        ->update([
+                            'astatus' =>  $responsecode,
+                            'PhoneNumber' => '0'.$msisdn,
+                            'transId' => $merchanttransid,
+                            'operator' => $circle,
+                            'reason' => $data,
+                            'balance' => $balance,
+                            'uniqueId' => $agent_id
+                        ],
+                        [
+                            'transId' => $transId,
+                            'mpesaReceipt' => $MpesaReceiptNumber
+                    ]);
+
+                    DB::table('air_txn')->insert([
+                        'responseId' => $pktransid,
+                        'responseStatus' => $responsecode,
+                        'responseDesc' => $responsemessage,
+                        'receiverMsisdn' => '0'.$msisdn,
+                        'senderMsisdn' => $sender,
+                        'amount' => $amount,
+                        'transId' => $merchanttransid
+                    ]);
+
+                }
+                else
+                {
+                    $data = explode("%$", $result);
+                    $merchanttransid = $data[0];
+                    $pktransid =$data[1];
+                    $transdatetime = $data[2];
+                    $res = explode(".", $data[3]);
+                    $responsecode = $res[1];
+                    $responsemessage = trim($data[4],"[SUCCESS:200] ");
+                    $status = trim($data[5],"$$$");
+
+                    DB::table('purchase')
+                        ->where('mpesaReceipt', $MpesaReceiptNumber)
+                        ->limit(1)
+                        ->update([
+                            'astatus' =>  $responsecode,
+                            'PhoneNumber' => '0'.$msisdn,
+                            'transId' => $merchanttransid,
+                            'operator' => $circle,
+                            'reason' => $data,
+                            'balance' => $balance,
+                            'uniqueId' => 'CH'
+                        ],
+                        [
+                            'transId' => $transId,
+                            'mpesaReceipt' => $MpesaReceiptNumber
+                    ]);
+
+                    DB::table('air_txn')->insert([
+                        'responseId' => $pktransid,
+                        'responseStatus' => $responsecode,
+                        'responseDesc' => $responsemessage,
+                        'receiverMsisdn' => '0'.$msisdn,
+                        'senderMsisdn' => $sender,
+                        'amount' => $amount,
+                        'transId' => $merchanttransid
+                    ]);
+                }
+
+            }
 
             if (curl_errno($ch))
             {
@@ -192,47 +289,7 @@ class C2BController extends BuyAirtimeController
                     'mpesaReceipt' => $MpesaReceiptNumber
                 ]);
             }
-            else
-            {
-                $data = explode("%$", $result);
-                $merchanttransid = $data[0];
-                $pktransid =$data[1];
-                $transdatetime = $data[2];
-                $res = explode(".", $data[3]);
-                $responsecode = $res[1];
-                $responsemessage = trim($data[4],"[SUCCESS:200] ");
-                $status = trim($data[5],"$$$");
-                ///curl_close($ch);
-                //$this->bulk($sender,$result,$FName);
-                //$this->log_this($result);
-                $balance = $this->pin_bal();
 
-                DB::table('purchase')
-                    ->where('mpesaReceipt', $MpesaReceiptNumber)
-                    ->limit(1)
-                    ->update([
-                        'astatus' =>  $responsecode,
-                        'PhoneNumber' => '0'.$msisdn,
-                        'transId' => $merchanttransid,
-                        'operator' => $circle,
-                        'reason' => $data,
-                        'balance' => $balance
-                    ],
-                    [
-                        'transId' => $transId,
-                        'mpesaReceipt' => $MpesaReceiptNumber
-                ]);
-
-                DB::table('air_txn')->insert([
-                    'responseId' => $pktransid,
-                    'responseStatus' => $responsecode,
-                    'responseDesc' => $responsemessage,
-                    'receiverMsisdn' => '0'.$msisdn,
-                    'senderMsisdn' => $sender,
-                    'amount' => $amount,
-                    'transId' => $merchanttransid
-                ]);
-            }
         }
         else
         {
@@ -410,10 +467,47 @@ class C2BController extends BuyAirtimeController
 
                 {
                     "phone": "254707772715",
-                    "message": "Dear Amos, Transaction for '.$FName.' has: '.$result.'."
+                    "message": "Dear Amos, '.$result.'."
+                },
+
+                {
+                    "phone": '.$sender.',
+                    "message": "'.$result.'"
                 }
             ]
 
+        }',
+        CURLOPT_HTTPHEADER => array(
+            'Accept: application/json',
+            'Content-Type: application/json',
+            'Authorization: Bearer NnmjJeifhmUWaXHHChzQgFtUe0KdYaRnEXSnRmlKABsbUAFe6YB6RINQDNsl'
+        ),
+        ));
+
+        $response = curl_exec($curl);
+        $this->log_notify($response);
+
+        curl_close($curl);
+
+    }
+
+    public function single($Msisdn,$msg)
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.mobilesasa.com/v1/send/message',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS =>'{
+            "senderID": "EAZYTOPUP",
+            "message": "'.$msg.'",
+            "phone": "'.$Msisdn.'"
         }',
         CURLOPT_HTTPHEADER => array(
             'Accept: application/json',
