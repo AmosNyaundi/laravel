@@ -86,7 +86,7 @@ class AgentsController extends Controller
                 }
                 elseif(DB::table('agents')->where('phone', $cus)->exists())
                 {
-                    $msg = "FAILED: The mobile number is already registered as agent!";
+                    $msg = "FAILED: The mobile number is already registered as an agent!";
                     $this->log_reg($msg);
                     $this->bulk($Msisdn,$msg);
                 }
@@ -105,9 +105,9 @@ class AgentsController extends Controller
                     ]);
 
                     $this->log_reg("Nominated customer: ".$cus);
-                    $msg = "Congratulations! You have nominated $cus. Thank you.";
+                    $msg = "Congratulations! You have nominated $cus. Buy airtime to any network paybill 4040333 n earn commission.";
                     $this->bulk($Msisdn,$msg);
-                    $msg ="Conveniently Buy airtime for Safaricom,Airtel or Telkom via MPESA PAYBLL 4040333 even if you have fuliza. Enter your mobile number as your account number";
+                    $msg ="Conveniently Buy airtime for Safaricom, Airtel or Telkom via MPESA PAYBLL 4040333 even if you have fuliza. Enter your mobile number as your account number";
                     $Msisdn = $cus;
                     $this->bulk($Msisdn,$msg);
                 }
@@ -115,7 +115,7 @@ class AgentsController extends Controller
             }
             else
             {
-                $msg = "FAILED: You are not allowed to nominate customer(s). Call 0707772715 for assistance.";
+                $msg = "FAILED: You are not allowed to register agents(s). Call 0707772715 for assistance.";
                 $this->log_reg($msg);
                 $this->bulk($Msisdn,$msg);
             }
@@ -213,11 +213,81 @@ class AgentsController extends Controller
             }
             else
             {
-                $msg = "Sorry! You are not allowed to use the service.";
+                $msg = "Sorry! You are not allowed to use the service. Buy airtime for Safaricom, Airtel or Telkom via MPESA Pay bill 4040333 even if you have fuliza.";
                 $this->log_reg($msg);
                 $this->bulk($Msisdn,$msg);
                 exit();
             }
+        }
+        elseif (stripos($user_data, '#S') !== false)
+        {
+            $this->log_this($dat);
+            DB::table('ondemand')
+                ->insert([
+                    'msisdn' => $Msisdn,
+                    'message' => $user_data,
+                    'shortcode' => $shortcode,
+                    'offercode' => $OfferCode,
+                    'linkid' => $linkId,
+                    'requestid' => $requestId,
+                    'clientTransactionId' => $ClientTransactionId,
+                    'referenceId' => $RefernceId,
+                    'requestTimeStamp' => $requestTimeStamp,
+                    'created_at' => $now
+                ]);
+
+            if(DB::table('agents')->where('phone', $Msisdn)->exists())
+            {
+                $msg = "FAILED: The mobile number is already registered as an agent!";
+                $this->log_reg($msg);
+                $this->bulk($Msisdn,$msg);
+            }
+            else
+            {
+                if(DB::table('nominated')->where('msisdn', $Msisdn)->exists())
+                {
+                    //$res=DB::table('nominated')->find($Msisdn)->delete();
+                    $res= DB::table('nominated')->where('msisdn', $Msisdn)->delete();
+                    $this->log_reg("Deleted customer: ".$Msisdn);
+
+                    if($res)
+                    {
+                        $agentId = mt_rand(1000,9999);
+                        DB::table('agents')
+                            ->insert([
+                                'uniqueId' => $agentId,
+                                'ref' => $agentId,
+                                'phone' => $Msisdn,
+                                'region' => 'NA',
+                                'status' => 0,
+                                'name' => 'Self Registration',
+                            ]);
+
+                        $msg = "Congratulations! Your Agent ID is $agentId. To check your commission, SMS EZ#BAL to 20750. Buy airtime to any network paybill 4040333 n earn commission.";
+                        $this->bulk($Msisdn,$msg);
+                        $this->log_reg($msg);
+
+                    }
+                }
+                else
+                {
+                    $agentId = mt_rand(1000,9999);
+                    DB::table('agents')
+                        ->insert([
+                            'uniqueId' => $agentId,
+                            'ref' => $agentId,
+                            'phone' => $Msisdn,
+                            'region' => 'NA',
+                            'status' => 0,
+                            'name' => 'self Registration',
+                        ]);
+
+                    $msg = "Congratulations! Your Agent ID is $agentId. To check your commission, SMS EZ#BAL to 20750. Buy airtime to any network paybill 4040333 n earn commission.";
+                    $this->bulk($Msisdn,$msg);
+                    $this->log_reg($msg);
+                }
+            }
+
         }
         else
         {
@@ -316,7 +386,7 @@ class AgentsController extends Controller
                 'name' => 'NA'
             ]);
 
-        $msg = "Congratulations! You have been nominated as an agent by $Msisdn. Your AgentID is: $agentId. Click here to login: https://agents.eazytopup.co.ke/";
+        $msg = "Congratulations! You have been registered as an agent by $Msisdn. Your Agent ID is $agentId. Buy airtime to any network paybill 4040333 n earn commission.";
         $Msisdn = $phone;
         $this->bulk($Msisdn,$msg);
         $this->log_reg($msg);
