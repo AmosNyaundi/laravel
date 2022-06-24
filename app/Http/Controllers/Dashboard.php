@@ -95,8 +95,12 @@ class Dashboard extends Controller
             return view('pages.home', compact('total_trans','trans','total_air','air','chart'));
 
         }
+        else
+        {
+            return redirect()->route('login');
+        }
 
-        return redirect()->route('login');
+        //return redirect()->route('login');
     }
 
 

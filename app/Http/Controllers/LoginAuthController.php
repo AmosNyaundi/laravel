@@ -13,9 +13,16 @@ class LoginAuthController extends Controller
 {
     public function index()
     {
-        return view('auth.login');
-    }
+        if(Auth::check())
+        {
+            return view('auth.login');
+        }
+        else
+        {
+            return redirect()->route('login');
+        }
 
+    }
 
     public function customLogin(Request $request)
     {

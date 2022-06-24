@@ -56,7 +56,6 @@ class RetryController extends Controller
                             ->where('mpesaReceipt', $MpesaReceiptNumber)
                             ->first();
 
-
                 $justNums = preg_replace('/\D+/', '', $phone->PhoneNumber);
                 $msisdn =substr($justNums, -9);
                 // $cus = "254".$msisdn;
@@ -237,7 +236,7 @@ class RetryController extends Controller
 
             $request->validate([
                 'mpesa_receipt' => 'required',
-                'number' => 'required |regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:10'
+                'number' => 'required |regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:12'
             ]);
 
             $MpesaReceiptNumber = $request['mpesa_receipt'];
@@ -248,22 +247,14 @@ class RetryController extends Controller
                 $air = DB::table('purchase')->where('mpesaReceipt', $MpesaReceiptNumber)->first();
                 $justNums = preg_replace('/\D+/', '', $phone);
                 $msisdn =substr($justNums, -9);
-                // $cus = "254".$msisdn;
-                // $agent = DB::table('nominated')
-                //             ->where('phone', $cus)
-                //             ->first();
-                // $agent_id = $agent->agent_id;
-
                 $transId = "CHA".Str::random(10);
                 $transId = strtoupper($transId);
                 $amount = $air->amount;
-
                 $circle = substr($msisdn, 0, 3);
                 $code = $this->operator($circle);
 
                 if (isset($code))
                 {
-
                     $ch = curl_init();
                     $headers = array();
                     $headers[] = 'Content-Length: 0';
@@ -277,7 +268,6 @@ class RetryController extends Controller
 
                     if (strpos($result, '#ERROR') !== false)
                     {
-
                         DB::table('purchase')
                         ->where('mpesaReceipt', $MpesaReceiptNumber)
                         ->limit(1)
@@ -308,10 +298,6 @@ class RetryController extends Controller
                         $responsecode = $res[1];
                         $responsemessage = trim($data[4],"[SUCCESS:200] ");
                         $status = trim($data[5],"$$$");
-                        ///curl_close($ch);
-                        //$this->bulk($sender,$result,$FName);
-                        //$this->log_this($result);
-                        //$balance = $this->pin_bal();
 
                         DB::table('purchase')
                             ->where('mpesaReceipt', $MpesaReceiptNumber)
@@ -357,27 +343,21 @@ class RetryController extends Controller
                         $status = "info";
                         return redirect()->route('namba_retry')->with(['message' => $message,'status' =>$status]);
                     }
-
                 }
-
             }
             else
             {
-
                 $message = "Invalid transaction code";
                 $status = "danger";
                 return redirect()->route('namba_retry')->with(['message' => $message,'status' =>$status]);
             }
-
         }
         else
         {
             return redirect()->route('login');
         }
 
-
     }
-
 
     public function operator($circle)
     {

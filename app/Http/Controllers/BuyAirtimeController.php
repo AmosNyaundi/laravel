@@ -31,8 +31,12 @@ class BuyAirtimeController extends Controller
 
             return view('pages.buy_airtime');
         }
+        else
+        {
+            return redirect()->route('login');
+        }
         //$message = "Session timeout!";
-        return redirect()->route('login');
+        //return redirect()->route('login');
     }
 
     public function log_this($lmsg)

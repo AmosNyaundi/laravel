@@ -84,6 +84,8 @@ class C2BController extends BuyAirtimeController
         $MName=$request->MiddleName;
         $LName=$request->LastName;
 
+        $agent_id = $this->agent_id($sender);
+
         DB::table('mpesa_txn')
             ->insert([
                 'MerchantRequestID' => $TransType,
@@ -104,6 +106,7 @@ class C2BController extends BuyAirtimeController
             'mstatus'=> 0,
             'msisdn' => $sender,
             'PhoneNumber' => $phone,
+            'uniqueId' => $agent_id,
             'created_at' => $now
         ]);
 
@@ -130,17 +133,17 @@ class C2BController extends BuyAirtimeController
 
     public function kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName)
     {
+        $now = Carbon::now();
         $justNums = preg_replace('/\D+/', '', $phone);
         $msisdn =substr($justNums, -9);
-        $cus = "254".$msisdn;
         $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
         $circle = substr($msisdn, 0, 3);
         $code = $this->operator($circle);
+        $agent_id = $this->agent_id($sender);
 
         if (isset($code))
         {
-
             $ch = curl_init();
             $headers = array();
             $headers[] = 'Content-Length: 0';
@@ -169,24 +172,24 @@ class C2BController extends BuyAirtimeController
                     'mpesaReceipt' => $MpesaReceiptNumber
                 ]);
 
-                $result="Transaction for $FName has failed!";
-                $this->bulk($sender,$result,$FName);
+                $msg="Transaction for $FName has failed!";
+                $this->bulk($sender,$msg,$FName);
             }
             else
             {
-                if(DB::table('nominated')->where('msisdn', $cus)->exists())
+                if(DB::table('nominated')->where('msisdn', $sender)->exists())
                 {
-                    $agent = DB::table('nominated')
-                                ->where('msisdn', $cus)
-                                ->first();
-                    $agent_id = $agent->agent_id;
-
                     $num = DB::table('agents')
                                 ->where('uniqueId', $agent_id)
                                 ->first();
                     $agent_num = $num->phone;
 
-                    $commission = $amount*0.04;
+                    $com = DB::table('purchase')
+                                ->where('uniqueId', $agent_id)
+                                ->whereMonth('created_at', Carbon::now()->month)
+                                ->sum('amount');
+
+                    $commission = number_format(($com+$amount)*0.04, 2);
 
                     $data = explode("%$", $result);
                     $merchanttransid = $data[0];
@@ -196,7 +199,8 @@ class C2BController extends BuyAirtimeController
                     $responsecode = $res[1];
                     $responsemessage = trim($data[4],"[SUCCESS:200] ");
                     $status = trim($data[5],"$$$");
-                    $msg="Your customer $cus has bought airtime of Ksh $amount. Your commission is Ksh $commission. Buy airtime to any network paybill 4040333 n earn commission.";
+
+                    $msg="Your customer $sender has bought airtime of Ksh $amount. Your commission is Ksh $commission as at $now. Sell more to earn more.";
                     $Msisdn= $agent_num;
                     $this->single($Msisdn,$msg);
 
@@ -209,8 +213,7 @@ class C2BController extends BuyAirtimeController
                             'transId' => $merchanttransid,
                             'operator' => $circle,
                             'reason' => $data,
-                            'balance' => $balance,
-                            'uniqueId' => $agent_id
+                            'balance' => $balance
                         ],
                         [
                             'transId' => $transId,
@@ -227,6 +230,53 @@ class C2BController extends BuyAirtimeController
                         'transId' => $merchanttransid
                     ]);
 
+                }
+                elseif(DB::table('agents')->where('phone', $sender)->where('ref', 'CH')->exists())
+                {
+                    $com = DB::table('purchase')
+                                ->where('uniqueId', $agent_id)
+                                ->whereMonth('created_at', Carbon::now()->month)
+                                ->sum('amount');
+
+                    $commission = number_format(($com+$amount)*0.04, 2);
+
+                    $data = explode("%$", $result);
+                    $merchanttransid = $data[0];
+                    $pktransid =$data[1];
+                    $transdatetime = $data[2];
+                    $res = explode(".", $data[3]);
+                    $responsecode = $res[1];
+                    $responsemessage = trim($data[4],"[SUCCESS:200] ");
+                    $status = trim($data[5],"$$$");
+                    $msg="Your customer $sender has bought airtime of Ksh $amount. Your commission is Ksh $commission as at $now. Sell more to earn more.";
+                    $Msisdn= $sender;
+                    $this->single($Msisdn,$msg);
+
+                    DB::table('purchase')
+                        ->where('mpesaReceipt', $MpesaReceiptNumber)
+                        ->limit(1)
+                        ->update([
+                            'astatus' =>  $responsecode,
+                            'PhoneNumber' => '0'.$msisdn,
+                            'transId' => $merchanttransid,
+                            'operator' => $circle,
+                            'reason' => $data,
+                            'balance' => $balance
+                        ],
+                        [
+                            'transId' => $transId,
+                            'mpesaReceipt' => $MpesaReceiptNumber
+                    ]);
+
+                    DB::table('air_txn')->insert([
+                        'responseId' => $pktransid,
+                        'responseStatus' => $responsecode,
+                        'responseDesc' => $responsemessage,
+                        'receiverMsisdn' => '0'.$msisdn,
+                        'senderMsisdn' => $sender,
+                        'amount' => $amount,
+                        'transId' => $merchanttransid
+                    ]);
                 }
                 else
                 {
@@ -248,8 +298,7 @@ class C2BController extends BuyAirtimeController
                             'transId' => $merchanttransid,
                             'operator' => $circle,
                             'reason' => $data,
-                            'balance' => $balance,
-                            'uniqueId' => 'CH'
+                            'balance' => $balance
                         ],
                         [
                             'transId' => $transId,
@@ -445,7 +494,7 @@ class C2BController extends BuyAirtimeController
         curl_close($ch);
     }
 
-    public function bulk($sender,$result,$FName)
+    public function bulk($sender,$msg,$FName)
     {
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -464,15 +513,9 @@ class C2BController extends BuyAirtimeController
                     "phone": '.$sender.',
                     "message": "Dear '.$FName.', Your airtime purchase request is being processed. Customer Care: 0707772715 / 0701324716 for assistance."
                 },
-
                 {
                     "phone": "254707772715",
-                    "message": "Dear Amos, '.$result.'."
-                },
-
-                {
-                    "phone": '.$sender.',
-                    "message": "'.$result.'"
+                    "message": "Dear Amos, '.$msg.'."
                 }
             ]
 
@@ -520,6 +563,34 @@ class C2BController extends BuyAirtimeController
         $this->log_notify($response);
 
         curl_close($curl);
+
+    }
+
+    public function agent_id($sender)
+    {
+        if(DB::table('nominated')->where('msisdn', $sender)->exists())
+        {
+            $agent = DB::table('nominated')
+                        ->where('msisdn', $sender)
+                        ->first();
+            $agent_id = $agent->agent_id;
+
+            return $agent_id;
+        }
+        elseif(DB::table('agents')->where('phone', $sender)->where('ref', 'CH')->exists())
+        {
+            $agent = DB::table('agents')
+                        ->where('phone', $sender)
+                        ->first();
+            $agent_id = $agent->uniqueId;
+
+            return $agent_id;
+        }
+        else
+        {
+            $agent_id = 'CH';
+            return $agent_id;
+        }
 
     }
 

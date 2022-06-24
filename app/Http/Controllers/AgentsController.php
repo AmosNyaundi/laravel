@@ -256,7 +256,7 @@ class AgentsController extends Controller
                         DB::table('agents')
                             ->insert([
                                 'uniqueId' => $agentId,
-                                'ref' => $agentId,
+                                'ref' => 'CH',
                                 'phone' => $Msisdn,
                                 'region' => 'NA',
                                 'status' => 0,

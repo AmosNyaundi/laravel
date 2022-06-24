@@ -66,7 +66,11 @@ class LoyaltyControler extends Controller
 
             return view('pages.loyalty',['table' => $loyalty]);
         }
-        return redirect()->route('login');
+        else
+        {
+            return redirect()->route('login');
+        }
+        //return redirect()->route('login');
     }
 
     public function bonus()

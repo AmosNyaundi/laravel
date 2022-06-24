@@ -23,7 +23,11 @@ class TxnController extends Controller
 
             return view('pages.txn',['table' => $table]);
         }
-        return redirect()->route('login');
+        else
+        {
+            return redirect()->route('login');
+        }
+        //return redirect()->route('login');
     }
 
     public function txn()
@@ -40,6 +44,10 @@ class TxnController extends Controller
 
             return view('pages.txn',['table' => $table]);
         }
-        return redirect()->route('login');
+        else
+        {
+            return redirect()->route('login');
+        }
+        //return redirect()->route('login');
     }
 }

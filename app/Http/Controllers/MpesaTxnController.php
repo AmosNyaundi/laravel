@@ -30,8 +30,12 @@ class MpesaTxnController extends Controller
 
             return view('pages.mpesatxn',['table' => $table]);
         }
+        else
+        {
+            return redirect()->route('login');
+        }
         //$message = "Session timeout!";
-        return redirect()->route('login');
+        //return redirect()->route('login');
     }
 
     /**
@@ -51,8 +55,12 @@ class MpesaTxnController extends Controller
                 ->get();
             return view('pages.mpesatxn',['table' => $table]);
         }
+        else
+        {
+            return redirect()->route('login');
+        }
         //$message = "Session timeout!";
-        return redirect()->route('login');
+        //return redirect()->route('login');
     }
 
     /**
