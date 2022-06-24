@@ -110,9 +110,16 @@ class C2BController extends BuyAirtimeController
             'created_at' => $now
         ]);
 
-        $this->kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName);
-        //$this->pin_recharge($amount,$phone,$sender,$FName);
+        $justNums = preg_replace('/\D+/', '', $phone);
 
+        if(strlen($justNums) == '11' )
+        {
+            $this->kplc($amount,$phone,$sender,$FName,$MpesaReceiptNumber);
+        }
+        else
+        {
+            $this->kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName);
+        }
 
         // $response = '{
         //     "TransactionType":"Pay Bill",
@@ -120,7 +127,7 @@ class C2BController extends BuyAirtimeController
         //     "TransTime":"20220225011523",
         //     "TransAmount":"1.00",
         //     "BusinessShortCode":"4040333",
-        //     "BillRefNumber":"angisa",
+        //     "BillRefNumber":"0799248518",
         //     "InvoiceNumber":"0",
         //     "OrgAccountBalance":"24.00",
         //     "ThirdPartyTransID":null,
@@ -134,8 +141,7 @@ class C2BController extends BuyAirtimeController
     public function kredo($amount,$phone,$MpesaReceiptNumber,$sender,$FName)
     {
         $now = Carbon::now();
-        $justNums = preg_replace('/\D+/', '', $phone);
-        $msisdn =substr($justNums, -9);
+        $msisdn = $this->phoneNumber($phone);
         $transId = "CHA".Str::random(10);
         $transId = strtoupper($transId);
         $circle = substr($msisdn, 0, 3);
@@ -155,6 +161,10 @@ class C2BController extends BuyAirtimeController
             $this->log_this($result);
             $balance = $this->pin_bal();
 
+            $msg = "Dear $FName, Your airtime purchase request is being processed. SMS EZ#S to 20750 to earn commission. Customer Care 0707772715.";
+            $Msisdn = $sender;
+            $this->single($Msisdn,$msg);
+
             if (strpos($result, '#ERROR') !== false)
             {
                 DB::table('purchase')
@@ -172,8 +182,9 @@ class C2BController extends BuyAirtimeController
                     'mpesaReceipt' => $MpesaReceiptNumber
                 ]);
 
-                $msg="Transaction for $FName has failed!";
-                $this->bulk($sender,$msg,$FName);
+                $msg="Dear Amos, Transaction for $FName has failed with error: $result ";
+                $Msisdn = '254707772715';
+                $this->single($Msisdn,$msg);
             }
             else
             {
@@ -189,7 +200,7 @@ class C2BController extends BuyAirtimeController
                                 ->whereMonth('created_at', Carbon::now()->month)
                                 ->sum('amount');
 
-                    $commission = number_format(($com+$amount)*0.04, 2);
+                    $commission = number_format($com*0.04, 2);
 
                     $data = explode("%$", $result);
                     $merchanttransid = $data[0];
@@ -238,7 +249,7 @@ class C2BController extends BuyAirtimeController
                                 ->whereMonth('created_at', Carbon::now()->month)
                                 ->sum('amount');
 
-                    $commission = number_format(($com+$amount)*0.04, 2);
+                    $commission = number_format($com*0.04, 2);
 
                     $data = explode("%$", $result);
                     $merchanttransid = $data[0];
@@ -315,7 +326,6 @@ class C2BController extends BuyAirtimeController
                         'transId' => $merchanttransid
                     ]);
                 }
-
             }
 
             if (curl_errno($ch))
@@ -337,8 +347,11 @@ class C2BController extends BuyAirtimeController
                 [
                     'mpesaReceipt' => $MpesaReceiptNumber
                 ]);
-            }
 
+                $msg="Dear Amos, Transaction for $FName has failed with error: $result";
+                $Msisdn = '254707772715';
+                $this->single($Msisdn,$msg);
+            }
         }
         else
         {
@@ -359,53 +372,98 @@ class C2BController extends BuyAirtimeController
         }
     }
 
-    public function pin_recharge($amount,$phone,$sender,$FName)
+    public function kplc($amount,$phone,$sender,$FName,$MpesaReceiptNumber)
     {
         $msisdn = $this->phoneNumber($phone);
         $transId = "PIN".Str::random(10);
         $transId = strtoupper($transId);
+        $meter = $phone;
+        $number = $sender;
 
-        $circle = substr($msisdn, 0, 3);
-        $code = $this->operator($circle);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_trans.php3?agentid=61&transid='.$transId.'&retailerid=61&operatorcode=5&circode=*&product&denomination=0&recharge='.$amount.'&deviceno='.$meter.'&mobileno='.$number.'&bulkqty=1&narration=buytoken&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        $headers = array();
+        $headers[] = 'Content-Length: 0';
+        $headers[] = 'Accept: plain/text';
+        $headers[] = 'Content-Type: plain/text';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $result = curl_exec($ch);
+        $this->log_pin($result);
+        $balance = $this->pin_bal();
 
-        if($code == '1' || $code =='2' || $code == '4')
+        if (strpos($result, '#ERROR') !== false)
         {
-            $denom = $amount;
-            $meter = null;
-            $number = null;
-            $reason = "buyairtime";
+            DB::table('purchase')
+                ->where('mpesaReceipt', $MpesaReceiptNumber)
+                ->limit(1)
+                ->update([
+                    'astatus' => 400,
+                    'PhoneNumber' => $phone,
+                    'transId' => $transId,
+                    'operator' => 'KPLC',
+                    'reason' => $result
+                ],
+                [
+                    'transId' => $transId,
+                    'mpesaReceipt' => $MpesaReceiptNumber
+                ]);
+
+            $msg="Dear Amos, Transaction for $FName has failed with error: $result ";
+            $Msisdn = '254707772715';
+            $this->single($Msisdn,$msg);
         }
         else
         {
-            $denom = $amount;
-            $meter = $phone;
-            $number = $sender;
-            $reason = "buytoken";
+            //AFT2102022%$217514287758%$PDSLOVS31947401%$2022-06-24 14:28:02%$57330816338364592295%$3.14%$%$0%$A7.elec000%$[SUCCESS:elec000] Transaction Successful.%$SUCCESS$$$
+            $data = explode("%$", $result);
+            $merchanttransid = $data[0];
+            $pktransid =$data[2];
+            $date = $data[3];
+            $tok = $data[4];
+            $units = $data[5];
+            $myarray = str_split($tok, 4);
+            $token = implode("-", $myarray);
+
+            $msg =  "KPLC Token". PHP_EOL .
+                    "Meter: $meter". PHP_EOL .
+                    "Token: $token". PHP_EOL .
+                    "Amount: $amount". PHP_EOL .
+                    "Units: $units". PHP_EOL .
+                    "Date: $date". PHP_EOL .
+                    "Thank You.";
+            $Msisdn= $sender;
+            $this->single($Msisdn,$msg);
+
+            DB::table('purchase')
+                ->where('mpesaReceipt', $MpesaReceiptNumber)
+                ->limit(1)
+                ->update([
+                    'astatus' =>  200,
+                    'PhoneNumber' => $msisdn,
+                    'transId' => $merchanttransid,
+                    'operator' => 'KPLC',
+                    'reason' => $data,
+                    'balance' => $balance
+                ],
+                [
+                    'transId' => $transId,
+                    'mpesaReceipt' => $MpesaReceiptNumber
+            ]);
+
         }
 
-        if(isset($code))
+        if (curl_errno($ch))
         {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_trans.php3?agentid=61&transid='.$transId.'&retailerid=61&operatorcode='.$code.'&circode=*&product&denomination='.$denom.'&recharge='.$amount.'&deviceno='.$meter.'&mobileno='.$number.'&bulkqty=1&narration='.$reason.'&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            $headers = array();
-            $headers[] = 'Content-Length: 0';
-            $headers[] = 'Accept: plain/text';
-            $headers[] = 'Content-Type: plain/text';
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-            $result = curl_exec($ch);
-            $this->log_pin($result);
+            $msg = 'Error: ' . curl_error($ch);
+            $this->log_pin($msg);
             $this->bulk($sender,$result,$FName);
-
-            if (curl_errno($ch)) {
-                $msg = 'Error: ' . curl_error($ch);
-                $this->log_pin($msg);
-                $this->bulk($sender,$result,$FName);
-            }
-            curl_close($ch);
+            $Msisdn = $sender;
+            $this->single($Msisdn,$msg);
         }
+        curl_close($ch);
+
     }
 
     public function reversal(Request $request)
@@ -425,16 +483,9 @@ class C2BController extends BuyAirtimeController
 
     public function phoneNumber($phone)
     {
-        //$justNums = preg_replace("/[^0-9]/", '', $phone);
         $justNums = preg_replace('/\D+/', '', $phone);
-        $justNums =substr($justNums, -9);
-
-        //$msisdn =substr( $pr->phone, -9);
-
-            //$justNums = preg_replace("/^0/", '',$justNums);
-
-            return $justNums;
-
+        $msisdn =substr($justNums, -9);
+        return $msisdn;
     }
 
     public function operator($circle)
@@ -592,6 +643,38 @@ class C2BController extends BuyAirtimeController
             return $agent_id;
         }
 
+    }
+
+    public function merchant($amount,$phone,$sender,$FName,$MpesaReceiptNumber)
+    {
+        $msisdn = $this->phoneNumber($phone);
+        $transId = "PIN".Str::random(10);
+        $transId = strtoupper($transId);
+        $circle = substr($msisdn, 0, 3);
+        $code = $this->operator($circle);
+        $now = Carbon::now();
+
+        if($code == '1' || $code =='2' || $code == '4')
+        {
+            $denom = $amount;
+            $meter = null;
+            $number = null;
+            $reason = "buyairtime";
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'http://193.104.202.165/kenya/mainlinkpos/purchase/pw_trans.php3?agentid=61&transid='.$transId.'&retailerid=61&operatorcode='.$code.'&circode=*&product&denomination='.$denom.'&recharge='.$amount.'&deviceno='.$meter.'&mobileno='.$number.'&bulkqty=1&narration='.$reason.'&agentpwd=CHECHI123&loginstatus=LIVE&appver=1.0');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            $headers = array();
+            $headers[] = 'Content-Length: 0';
+            $headers[] = 'Accept: plain/text';
+            $headers[] = 'Content-Type: plain/text';
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            $result = curl_exec($ch);
+            $this->log_pin($result);
+            $this->bulk($sender,$result,$FName);
+        }
     }
 
 }

@@ -2,12 +2,27 @@
 
 //$resp = mt_rand(1000,9999);
 
-$dat = "Ez#0707644931#muranga";
-$data = explode("#", $dat);
+// $dat = "Ez#+254707644931#muranga";
+// $data = explode("#", $dat);
 
-$phone = substr($data[1], -9);;
-$region = $data[2];
-echo $phone."-".$region;
+// $phone = $data[1];
+// $region = $data[2];
+// echo $phone."-".$region;
+
+// function phoneNumber($phone)
+// {
+//     $justNums = preg_replace('/\D+/', '', $phone);
+//     $msisdn =substr($justNums, -9);
+//     return $msisdn;
+
+// }
+
+// $num = phoneNumber($phone);
+// echo $num;
+// $data = 'First line' . PHP_EOL .
+//         'Second line' . PHP_EOL .
+//         'Third line';
+// echo $data;
 
 //    $req = '{
 //     "requestId":"10185461720890381332",
@@ -80,11 +95,11 @@ echo $phone."-".$region;
 
 
 
-// $string = "39133213700503961781";
-// $myarray = str_split($string, 4);
-// $token = implode("-", $myarray);
+$string = "39133213700503961781";
+$myarray = str_split($string, 4);
+$token = implode("-", $myarray);
 
-// echo $token;
+echo $token;
 
 
 // $value = "Innocent Nyerere Bosire";
